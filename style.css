@@ -1,0 +1,28 @@
+body { background-color: #1a1512; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: 'Georgia', serif; color: #3b2b1a; }
+.book-page { background-color: #e8d5b5; width: 450px; padding: 25px; box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 1px solid #c4a484; }
+.border-decoration { border: 3px double #3b2b1a; padding: 15px; text-align: center; min-height: 550px; }
+h1 { font-size: 1.6em; text-transform: uppercase; border-bottom: 2px solid #3b2b1a; margin-bottom: 10px; }
+.logo { max-width: 100px; filter: sepia(0.6); margin-bottom: 10px; }
+
+.rp-label { display: block; text-align: left; font-size: 0.8em; font-weight: bold; margin-top: 8px; text-transform: uppercase; }
+.rp-select, .rp-input { background: #fdf5e6; border: 2px solid #3b2b1a; padding: 6px; width: 100%; box-sizing: border-box; }
+
+.status-box { background: rgba(0,0,0,0.05); border: 1px dashed #3b2b1a; padding: 8px; margin-bottom: 15px; font-style: italic; }
+.button-container { display: flex; flex-direction: column; gap: 6px; }
+.rp-button { background: transparent; border: 2px solid #3b2b1a; padding: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+.rp-button:hover { background: #3b2b1a; color: #e8d5b5; }
+
+.jizdy-list { text-align: left; max-height: 320px; overflow-y: auto; padding: 8px; border: 1px solid #3b2b1a; background: rgba(255,255,255,0.1); margin-top: 10px; }
+.jizda-item { margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px dotted #3b2b1a; position: relative; }
+.completed-jizda { background: rgba(46, 125, 50, 0.15); }
+
+.detail-btn { background: #8b0000; color: white; border: none; padding: 4px 8px; cursor: pointer; font-size: 0.7em; }
+.start-btn { background: #3b2b1a; color: white; border: none; padding: 4px 8px; cursor: pointer; font-size: 0.7em; }
+.check-btn { background: #2e7d32; color: white; border: none; padding: 4px 8px; cursor: pointer; font-size: 0.7em; }
+
+.jizda-detail { background: #fdf5e6; padding: 8px; border: 1px solid #3b2b1a; margin-top: 5px; }
+.itinerar-table { width: 100%; font-size: 0.75em; border-collapse: collapse; }
+.it-cas { text-align: right; font-weight: bold; color: #8b0000; }
+
+.btn-finish-shift { background: #8b0000 !important; color: white !important; margin-top: 15px; width: 100%; }
+.back-link { font-size: 0.8em; color: #3b2b1a; display: block; margin-top: 10px; text-decoration: underline; cursor: pointer; }

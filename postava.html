@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pracovní list - CRC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="book-page">
+        <div class="border-decoration">
+            <header>
+                <h1 id="jmeno-zamestnance">Načítání...</h1>
+                <div class="ornament">❦</div>
+            </header>
+
+            <div id="hlavni-rozhrani">
+                <div class="status-box">
+                    <p id="aktualni-stav">Status: Mimo službu</p>
+                </div>
+                <div class="button-container">
+                    <button class="rp-button" onclick="zobrazNastaveniSmeny()">Začít Směnu (Manuální)</button>
+                    <button class="rp-button" onclick="zobrazVyberSmeny()">Přebrat směnu (Turnus)</button>
+                    <button class="rp-button btn-reset" onclick="vymazatZaznam()">Resetovat data</button>
+                </div>
+            </div>
+
+            <div id="vyber-linky" style="display:none;">
+                <h2 class="section-label">Nastavení jízdy</h2>
+                <div class="button-container">
+                    <label class="rp-label">Linka:</label>
+                    <select id="select-linka" class="rp-select">
+                        <option value="0">Expres Train (47 min)</option>
+                        <option value="1">Bullet Train (27 min)</option>
+                        <option value="2">Local Train (13 min)</option>
+                    </select>
+                    <label class="rp-label">Počet kol:</label>
+                    <input type="number" id="input-kola" class="rp-input" min="1" value="1">
+                    <label class="rp-label">Odjezd za (minut):</label>
+                    <input type="number" id="input-odklad" class="rp-input" min="0" value="0">
+                    <button class="rp-button" onclick="zahájitManualniSmenu()">Potvrdit a vyjet</button>
+                    <button class="back-link" onclick="zpet()">← Zpět</button>
+                </div>
+            </div>
+
+            <div id="jizdni-rad-smeny" style="display:none;">
+                <h2 class="section-label">Jízdní řád</h2>
+                <div id="vypis-linek" class="jizdy-list"></div>
+                <button id="finish-btn" class="rp-button btn-finish-shift" onclick="ukoncitSmenu()">UKONČIT CELOU SMĚNU</button>
+            </div>
+
+            <footer><a href="index.html" class="back-link">Zpět do seznamu</a></footer>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const postavaID = params.get('id');
+        const jmenoZamestnance = postavaID ? postavaID.replace(/-/g, ' ') : "Neznámý";
+        document.getElementById('jmeno-zamestnance').innerText = jmenoZamestnance;
+
+        const WEBHOOK_HLAVNI = "https://discord.com/api/webhooks/1462379181290553378/7szxSP1bgAiR1diwDixyPPrXxklYWVGdLn3xZy8czqxGbqda9wtryXNV_zqJXL3PHGKO";
+        const WEBHOOK_BLACKWATER = "https://discord.com/api/webhooks/1463245037834862616/M_myizEOqBJjE84_5MKqNQdRlY4S1P6EHBA3JnYxOw2mdYYn0kt609sc8MIz1v3e4PkV";
+
+        let statistiky = { dokončeno: 0, celkemTrasy: 0, trzba: 0 };
+        
+        const linkyData = [
+            { 
+                nazev: "EXPRES TRAIN", 
+                doba: 47, 
+                zastavky: [
+                    {s: "Saint Denis", t: 0}, {s: "Van Horn", t: 3}, {s: "Annesburg", t: 2}, {s: "Bachus", t: 4}, 
+                    {s: "Wallace", t: 4}, {s: "Riggs", t: 2}, {s: "Blackwater", t: 2}, {s: "MacFarlane", t: 4}, 
+                    {s: "Armadillo", t: 3}, {s: "Marcel", t: 2}, {s: "Benedict Point", t: 6}, 
+                    {s: "Blackwater", t: 8}, {s: "Saint Denis", t: 5}
+                ] 
+            },
+            { nazev: "BULLET TRAIN", doba: 27, zastavky: [{s: "Saint Denis", t: 0}, {s: "Valentine", t: 4}, {s: "Flatneck", t: 3}, {s: "Montana River", t: 3}, {s: "MacFarlane", t: 2}, {s: "Blackwater", t: 3}, {s: "Saint Denis", t: 9}] },
+            { nazev: "LOCAL TRAIN", doba: 13, zastavky: [{s: "Saint Denis", t: 0}, {s: "Rhodes", t: 3}, {s: "Valentine", t: 4}, {s: "Emerald", t: 3}, {s: "Saint Denis", t: 3}] }
+        ];
+
+        function formatCas(h, m) {
+            let hh = h; while (hh >= 24) hh -= 24;
+            return (hh < 10 ? "0"+hh : hh) + ":" + (m < 10 ? "0"+m : m);
+        }
+
+        async function odeslat(url, msg) {
+            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: msg }) });
+        }
+
+        async function poslatHlaseniBlackwater(linkaObj, startH, startM) {
+            let tH = startH, tM = startM;
+            let nalezenaZastavkaCislo = 0;
+
+            for (let z of linkaObj.zastavky) {
+                tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
+                
+                if(z.s === "Blackwater") {
+                    nalezenaZastavkaCislo++;
+                    let bwCas = formatCas(tH, tM);
+                    let smer = "Saint Denis";
+
+                    if(linkaObj.nazev === "EXPRES TRAIN") {
+                        // První zastavení v Blackwateru je směr Benedict Point, druhé směr Saint Denis
+                        smer = (nalezenaZastavkaCislo === 1) ? "Benedict Point" : "Saint Denis";
+                    }
+
+                    const msg = `📢 **INFORMAČNÍ TABULE BLACKWATER**\n📌 **${linkaObj.nazev}**\n🕒 Příjezd: **${bwCas}**\n🛤️ Směr: **${smer}**`;
+                    await odeslat(WEBHOOK_BLACKWATER, msg);
+                }
+            }
+        }
+
+        function zobrazNastaveniSmeny() { document.getElementById('hlavni-rozhrani').style.display='none'; document.getElementById('vyber-linky').style.display='block'; }
+        function zpet() { location.reload(); }
+
+        async function zahájitManualniSmenu() {
+            const index = document.getElementById('select-linka').value;
+            const kola = parseInt(document.getElementById('input-kola').value) || 1;
+            const odklad = parseInt(document.getElementById('input-odklad').value) || 0;
+            const d = new Date(new Date().getTime() + (odklad * 60000));
+            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** zahajuje směnu (${linkyData[index].nazev}).`);
+            vygenerujList(linkyData[index], kola, d.getHours(), d.getMinutes());
+        }
+
+        function vygenerujList(l, k, h, m) {
+            document.getElementById('vyber-linky').style.display='none'; document.getElementById('jizdni-rad-smeny').style.display='block';
+            let v = document.getElementById('vypis-linek'); v.innerHTML = "";
+            for(let i=1; i<=k; i++) {
+                v.innerHTML += vytvorRadekJizdy(l, i, h, m);
+                statistiky.celkemTrasy++;
+                m += l.doba + 10; while(m >= 60) { m -= 60; h++; }
+            }
+        }
+
+        function vytvorRadekJizdy(l, c, h, m) {
+            const id = "j-" + Math.random().toString(36).substr(2, 5);
+            const sV = formatCas(h, m);
+            let it = `<table class="itinerar-table">`;
+            let tH = h, tM = m;
+            l.zastavky.forEach(z => {
+                tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
+                it += `<tr><td>${z.s}</td><td class="it-cas">${formatCas(tH, tM)}</td></tr>`;
+            });
+            it += `</table>`;
+            return `<div class="jizda-item" id="item-${id}">
+                <p><strong>${c}. ${l.nazev} (${sV})</strong></p>
+                <button class="detail-btn" onclick="toggleDetail('${id}')">TRASA</button>
+                <button class="start-btn" id="st-${id}" onclick="start('${id}', '${c}', '${sV}', '${formatCas(tH, tM)}', ${JSON.stringify(l).replace(/"/g, '&quot;')}, ${h}, ${m})">ZAČÍT JÍZDU</button>
+                <button class="check-btn" id="ch-${id}" style="display:none;" onclick="konec('${id}', '${c}', '${l.nazev}')">HOTOVO ✔</button>
+                <div id="${id}" class="jizda-detail" style="display:none;">${it}</div>
+            </div>`;
+        }
+
+        async function start(id, c, s, k, lObj, h, m) {
+            await odeslat(WEBHOOK_HLAVNI, `🚂 **${jmenoZamestnance}**: Jízda ${c} (${lObj.nazev}). Odjezd: ${s}.`);
+            await poslatHlaseniBlackwater(lObj, h, m);
+            document.getElementById('st-'+id).style.display='none';
+            document.getElementById('ch-'+id).style.display='inline-block';
+        }
+
+        async function konec(id, c, l) {
+            let p = prompt("Tržba (počet lístků):", "0");
+            let z = (parseInt(p) || 0) * 5;
+            statistiky.trzba += z; statistiky.dokončeno++;
+            await odeslat(WEBHOOK_HLAVNI, `✅ **${jmenoZamestnance}**: Jízda ${c} hotova. Tržba: ${z} USD.`);
+            document.getElementById('item-'+id).classList.add('completed-jizda');
+            document.getElementById('ch-'+id).disabled = true;
+        }
+
+        async function ukoncitSmenu() {
+            if(confirm("Ukončit směnu?")) {
+                await odeslat(WEBHOOK_HLAVNI, `🏁 **REPORT: ${jmenoZamestnance}**\nDokončeno: ${statistiky.dokončeno}/${statistiky.celkemTrasy}\nTržba: ${statistiky.trzba} USD`);
+                location.reload();
+            }
+        }
+        function toggleDetail(id) { const e = document.getElementById(id); e.style.display = (e.style.display==='none')?'block':'none'; }
+        function vymazatZaznam() { localStorage.clear(); location.reload(); }
+    </script>
+</body>
+</html>
