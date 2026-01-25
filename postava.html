@@ -102,18 +102,19 @@
             },
             { 
                 nazev: "BULLET TRAIN", 
-                doba: 45, 
+                doba: 37, // Upravená doba podle nových intervalů
                 zastavky: [
-                    {s: "Saint Denis", t: 0}, {s: "Oil Fields", t: 6}, {s: "Valentine", t: 6}, {s: "Flatneck Station", t: 5}, 
-                    {s: "Montana River", t: 5}, {s: "MacFarlane's Ranch", t: 4}, {s: "Blackwater", t: 5}, {s: "Saint Denis", t: 14}
+                    {s: "Saint Denis", t: 0}, {s: "Oil Fields", t: 4}, {s: "Valentine", t: 2}, {s: "Flatneck Station", t: 2}, 
+                    {s: "Montana River", t: 4}, {s: "MacFarlane's Ranch", t: 8}, {s: "Blackwater", t: 3}, {s: "Flatneck Station", t: 2}, 
+                    {s: "Rhodes", t: 3}, {s: "Saint Denis", t: 9}
                 ] 
             },
             { 
                 nazev: "LOCAL TRAIN", 
-                doba: 35, 
+                doba: 25, // Upravená doba podle nových intervalů
                 zastavky: [
-                    {s: "Saint Denis", t: 0}, {s: "Rhodes", t: 6}, {s: "Valentine", t: 8}, {s: "Oil Fields", t: 5}, 
-                    {s: "Emerald Ranch", t: 8}, {s: "Saint Denis", t: 8}
+                    {s: "Saint Denis", t: 0}, {s: "Rhodes", t: 3}, {s: "Valentine", t: 9}, {s: "Oil Fields", t: 2}, 
+                    {s: "Emerald Ranch", t: 2}, {s: "Saint Denis", t: 9}
                 ] 
             }
         ];
@@ -369,6 +370,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td>2.2</td>
+                        <td>Aktualizace tras vlaků: EXPRES TRAIN (nové intervaly bez Oil Fields, s extra časy pro náklad), BULLET TRAIN (nová trasa s Olejárkou) a LOCAL TRAIN (zkrácené časy s extra pro Valentine a Saint Denis).</td>
+                        <td><input type="checkbox" id="v2.2" onchange="checkChangelog()"></td>
+                    </tr>
                     <tr>
                         <td>2.1</td>
                         <td>Přidány osobní reporty zaměstnanců na Discord s kumulovanými statistikami. Uložení dat do localStorage pro trvalé sledování.</td>
