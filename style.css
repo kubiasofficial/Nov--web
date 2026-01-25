@@ -48,3 +48,8 @@ h1 { font-size: 1.6em; text-transform: uppercase; border-bottom: 2px solid #3b2b
 .changelog-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-family: 'Crimson Text', serif; }
 .changelog-table th, .changelog-table td { border: 1px solid #3b2b1a; padding: 8px; text-align: left; }
 .changelog-table th { background-color: #fdf5e6; font-family: 'Playfair Display', serif; }
+
+/* Průvodčí List */
+.pruvodci-list { list-style: none; padding: 0; }
+.pruvodci-list li { padding: 10px; cursor: pointer; border-bottom: 1px solid #3b2b1a; }
+.pruvodci-list li:hover { background-color: #e8d5b5; }

@@ -257,14 +257,50 @@
             let p = prompt("Tržba (počet lístků):", "0");
             let z = (parseInt(p) || 0) * 5;
             statistiky.trzba += z; statistiky.dokončeno++;
+
+            // Otázka na průvodčího
+            let pruvodci = null;
+            if (confirm("Byl s vámi průvodčí?")) {
+                // Otevřít modal pro výběr průvodčího
+                document.getElementById('pruvodci-modal').style.display = 'block';
+                // Čekat na výběr (jednoduché řešení: použijeme global proměnnou)
+                await new Promise(resolve => {
+                    window.pruvodciCallback = (selected) => {
+                        pruvodci = selected;
+                        document.getElementById('pruvodci-modal').style.display = 'none';
+                        resolve();
+                    };
+                });
+            }
+
+            const pruvodciText = pruvodci ? `Průvodčí: ${pruvodci}` : "Průvodčí: Nepřítomen";
+
             await odeslat(WEBHOOK_HLAVNI, null, {
                 title: "Jízda dokončena",
-                description: `**${jmenoZamestnance}**: Jízda ${c} hotova.`,
+                description: `**${jmenoZamestnance}**: Jízda ${c} hotova.\n${pruvodciText}`,
                 fields: [
                     { name: "Tržba", value: `${z} USD`, inline: true }
                 ],
                 color: 0x2ecc71
             });
+
+            // Odeslat zprávu průvodčímu, pokud byl vybrán
+            if (pruvodci) {
+                const pruvodciID = pruvodci.replace(' ', '-');
+                const pruvWebhook = WEBHOOK_ZAMESTNANCI[pruvodciID];
+                if (pruvWebhook) {
+                    await odeslat(pruvWebhook, null, {
+                        title: "Služba průvodčího dokončena",
+                        description: `**${pruvodci}** sloužil na lince **${l}** jako průvodčí.`,
+                        fields: [
+                            { name: "Prodané jízdenky", value: `${p}`, inline: true },
+                            { name: "Tržba", value: `${z} USD`, inline: true }
+                        ],
+                        color: 0x3498db
+                    });
+                }
+            }
+
             document.getElementById('item-'+id).classList.add('completed-jizda');
             document.getElementById('ch-'+id).disabled = true;
         }
@@ -365,6 +401,20 @@
         }
     </script>
 
+    <!-- Průvodčí Modal -->
+    <div id="pruvodci-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('pruvodci-modal').style.display='none';">&times;</span>
+            <h2>Vyber průvodčího</h2>
+            <ul class="pruvodci-list">
+                <li onclick="window.pruvodciCallback('Joshue Thorne')">Joshue Thorne</li>
+                <li onclick="window.pruvodciCallback('Elizabeth Brown')">Elizabeth Brown</li>
+                <li onclick="window.pruvodciCallback('Henry Brown')">Henry Brown</li>
+                <li onclick="window.pruvodciCallback('Nicholas Carter')">Nicholas Carter</li>
+            </ul>
+        </div>
+    </div>
+
     <!-- Changelog Modal -->
     <div id="changelog-modal" class="modal">
         <div class="modal-content">
@@ -379,6 +429,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td>2.3</td>
+                        <td>Přidána funkce průvodčích: Po dokončení jízdy výběr průvodčího s odesláním reportu na jeho Discord webhook (služba, prodané jízdenky).</td>
+                        <td><input type="checkbox" id="v2.3" onchange="checkChangelog()"></td>
+                    </tr>
                     <tr>
                         <td>2.2</td>
                         <td>Aktualizace tras vlaků: EXPRES TRAIN (nové intervaly bez Oil Fields, s extra časy pro náklad), BULLET TRAIN (nová trasa s Olejárkou) a LOCAL TRAIN (zkrácené časy s extra pro Valentine a Saint Denis).</td>
