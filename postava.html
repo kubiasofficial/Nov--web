@@ -25,6 +25,16 @@
                 </div>
             </div>
 
+            <div id="vyber-turnusu" style="display:none;">
+                <h2 class="section-label">Volba služby</h2>
+                <div class="button-container">
+                    <button class="rp-button" onclick="nastavitTurnus('RANNÍ', 5, 0)">§ RANNÍ (05:00 - 15:00)</button>
+                    <button class="rp-button" onclick="nastavitTurnus('ODPOLEDNÍ', 15, 0)">§ ODPOLEDNÍ (15:00 - 22:00)</button>
+                    <button class="rp-button" onclick="nastavitTurnus('NOČNÍ', 22, 0)">§ NOČNÍ (22:00 - 05:00)</button>
+                    <button class="back-link" onclick="zpet()">← Zpět</button>
+                </div>
+            </div>
+
             <div id="vyber-linky" style="display:none;">
                 <h2 class="section-label">Nastavení jízdy</h2>
                 <div class="button-container">
@@ -84,47 +94,42 @@
             return (hh < 10 ? "0"+hh : hh) + ":" + (m < 10 ? "0"+m : m);
         }
 
-        async function odeslat(url, msg) {
-            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: msg }) });
+        function zobrazNastaveniSmeny() { 
+            document.getElementById('hlavni-rozhrani').style.display='none'; 
+            document.getElementById('vyber-linky').style.display='block'; 
         }
 
-        async function poslatHlaseniBlackwater(linkaObj, startH, startM) {
-            let tH = startH, tM = startM;
-            let nalezenaZastavkaCislo = 0;
-
-            for (let z of linkaObj.zastavky) {
-                tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
-                
-                if(z.s === "Blackwater") {
-                    nalezenaZastavkaCislo++;
-                    let bwCas = formatCas(tH, tM);
-                    let smer = "Saint Denis";
-
-                    if(linkaObj.nazev === "EXPRES TRAIN") {
-                        // První zastavení v Blackwateru je směr Benedict Point, druhé směr Saint Denis
-                        smer = (nalezenaZastavkaCislo === 1) ? "Benedict Point" : "Saint Denis";
-                    }
-
-                    const msg = `📢 **INFORMAČNÍ TABULE BLACKWATER**\n📌 **${linkaObj.nazev}**\n🕒 Příjezd: **${bwCas}**\n🛤️ Směr: **${smer}**`;
-                    await odeslat(WEBHOOK_BLACKWATER, msg);
-                }
-            }
+        // OPRAVA: Přidána funkce pro zobrazení výběru turnusu
+        function zobrazVyberSmeny() {
+            document.getElementById('hlavni-rozhrani').style.display='none';
+            document.getElementById('vyber-turnusu').style.display='block';
         }
 
-        function zobrazNastaveniSmeny() { document.getElementById('hlavni-rozhrani').style.display='none'; document.getElementById('vyber-linky').style.display='block'; }
         function zpet() { location.reload(); }
+
+        // OPRAVA: Funkce pro nastavení turnusu (automaticky vybere linku podle postavy)
+        async function nastavitTurnus(typ, h, m) {
+            let vybranaLinka = linkyData[0]; // Výchozí Expres
+            if (jmenoZamestnance.includes("Elizabeth")) vybranaLinka = linkyData[1];
+            if (jmenoZamestnance.includes("Henry")) vybranaLinka = linkyData[2];
+
+            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** nastupuje na turnus: **${typ}**.`);
+            document.getElementById('vyber-turnusu').style.display='none';
+            vygenerujList(vybranaLinka, 4, h, m); // Generuje 4 kola pro daný turnus
+        }
 
         async function zahájitManualniSmenu() {
             const index = document.getElementById('select-linka').value;
             const kola = parseInt(document.getElementById('input-kola').value) || 1;
             const odklad = parseInt(document.getElementById('input-odklad').value) || 0;
             const d = new Date(new Date().getTime() + (odklad * 60000));
-            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** zahajuje směnu (${linkyData[index].nazev}).`);
+            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** zahajuje manuální směnu (${linkyData[index].nazev}).`);
             vygenerujList(linkyData[index], kola, d.getHours(), d.getMinutes());
         }
 
         function vygenerujList(l, k, h, m) {
-            document.getElementById('vyber-linky').style.display='none'; document.getElementById('jizdni-rad-smeny').style.display='block';
+            document.getElementById('vyber-linky').style.display='none'; 
+            document.getElementById('jizdni-rad-smeny').style.display='block';
             let v = document.getElementById('vypis-linek'); v.innerHTML = "";
             for(let i=1; i<=k; i++) {
                 v.innerHTML += vytvorRadekJizdy(l, i, h, m);
@@ -133,6 +138,7 @@
             }
         }
 
+        // ... zbytek funkcí (vytvorRadekJizdy, start, konec, odeslat, poslatHlaseniBlackwater) zůstává stejný ...
         function vytvorRadekJizdy(l, c, h, m) {
             const id = "j-" + Math.random().toString(36).substr(2, 5);
             const sV = formatCas(h, m);
@@ -166,6 +172,26 @@
             await odeslat(WEBHOOK_HLAVNI, `✅ **${jmenoZamestnance}**: Jízda ${c} hotova. Tržba: ${z} USD.`);
             document.getElementById('item-'+id).classList.add('completed-jizda');
             document.getElementById('ch-'+id).disabled = true;
+        }
+
+        async function odeslat(url, msg) {
+            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: msg }) });
+        }
+
+        async function poslatHlaseniBlackwater(linkaObj, startH, startM) {
+            let tH = startH, tM = startM;
+            let nalezenaZastavkaCislo = 0;
+            for (let z of linkaObj.zastavky) {
+                tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
+                if(z.s === "Blackwater") {
+                    nalezenaZastavkaCislo++;
+                    let bwCas = formatCas(tH, tM);
+                    let smer = "Saint Denis";
+                    if(linkaObj.nazev === "EXPRES TRAIN") smer = (nalezenaZastavkaCislo === 1) ? "Benedict Point" : "Saint Denis";
+                    const msg = `📢 **INFORMAČNÍ TABULE BLACKWATER**\n📌 **${linkaObj.nazev}**\n🕒 Příjezd: **${bwCas}**\n🛤️ Směr: **${smer}**`;
+                    await odeslat(WEBHOOK_BLACKWATER, msg);
+                }
+            }
         }
 
         async function ukoncitSmenu() {
