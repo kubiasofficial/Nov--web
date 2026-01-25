@@ -75,6 +75,8 @@
         const WEBHOOK_HLAVNI = "https://discord.com/api/webhooks/1462379181290553378/7szxSP1bgAiR1diwDixyPPrXxklYWVGdLn3xZy8czqxGbqda9wtryXNV_zqJXL3PHGKO";
         const WEBHOOK_BLACKWATER = "https://discord.com/api/webhooks/1463245037834862616/M_myizEOqBJjE84_5MKqNQdRlY4S1P6EHBA3JnYxOw2mdYYn0kt609sc8MIz1v3e4PkV";
 
+        const WEBHOOK_JIZDNI_RAD = "https://discord.com/api/webhooks/1462391755864277033/mQ1n6EsyC-yEuEc7hZTYsm8Jt9VjnUGr-jPVM2qjvVSSkisoS2Cpl1DSi1Oe7lUnBd6J";
+
         const WEBHOOK_ZAMESTNANCI = {
             'Joshue-Thorne': "https://discord.com/api/webhooks/1465056082752704603/RLXTppqZ_ANNJ58G7SAnJt9jzupt1ySDpeuz3TcgZUnGIoWeEYH4iRe9uAgw2pugZUbo",
             'Elizabeth-Brown': "https://discord.com/api/webhooks/1465055695148945479/XbFSoeTQ7uvPyO_9dzfaRzXU8Vs_A0rxEtj2KhD14cmzhB6CE0lJyk0eEtrpF9MBgRwD",
@@ -217,6 +219,20 @@
         }
 
         async function start(id, c, s, k, lObj, h, m) {
+            // Vytvoření textu jízdního řádu
+            let jizdniRad = `**Strojvedoucí:** ${jmenoZamestnance}\n**Linka:** ${lObj.nazev}\n**Jízda č.** ${c}\n**Odjezd:** ${s}\n\n**Itinerář:**\n`;
+            let tH = h, tM = m;
+            lObj.zastavky.forEach(z => {
+                tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
+                jizdniRad += `- ${z.s}: ${formatCas(tH, tM)}\n`;
+            });
+
+            await odeslat(WEBHOOK_JIZDNI_RAD, null, {
+                title: "🚂 Jízdní řád - Začátek jízdy",
+                description: jizdniRad,
+                color: 0x2ecc71
+            });
+
             await odeslat(WEBHOOK_HLAVNI, null, {
                 title: "Začátek jízdy",
                 description: `**${jmenoZamestnance}**: Jízda ${c} (${lObj.nazev}). Odjezd: ${s}.`,
