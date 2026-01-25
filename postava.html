@@ -142,7 +142,11 @@
             statistiky.celkemTrasy = 0;
             let indexLinky = 0;
 
-            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** nastupuje na turnus: **${typ}**.`);
+            await odeslat(WEBHOOK_HLAVNI, null, {
+                title: "Začátek směny",
+                description: `**${jmenoZamestnance}** nastupuje na turnus: **${typ}**.`,
+                color: 0x3498db
+            });
 
             while (aktualniCasVMinutach + 20 < konecSmenyVMinutach) {
                 let linka = linkyData[indexLinky % linkyData.length];
@@ -168,7 +172,11 @@
             document.getElementById('vyber-linky').style.display='none'; 
             document.getElementById('jizdni-rad-smeny').style.display='block';
             
-            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** zahajuje manuální směnu (${linkyData[index].nazev}).`);
+            await odeslat(WEBHOOK_HLAVNI, null, {
+                title: "Začátek manuální směny",
+                description: `**${jmenoZamestnance}** zahajuje manuální směnu (${linkyData[index].nazev}).`,
+                color: 0x3498db
+            });
             
             let v = document.getElementById('vypis-linek'); v.innerHTML = "";
             let h = d.getHours(), m = d.getMinutes();
@@ -199,7 +207,11 @@
         }
 
         async function start(id, c, s, k, lObj, h, m) {
-            await odeslat(WEBHOOK_HLAVNI, `🚂 **${jmenoZamestnance}**: Jízda ${c} (${lObj.nazev}). Odjezd: ${s}.`);
+            await odeslat(WEBHOOK_HLAVNI, null, {
+                title: "Začátek jízdy",
+                description: `**${jmenoZamestnance}**: Jízda ${c} (${lObj.nazev}). Odjezd: ${s}.`,
+                color: 0x3498db
+            });
             await poslatHlaseniBlackwater(lObj, h, m);
             document.getElementById('st-'+id).style.display='none';
             document.getElementById('ch-'+id).style.display='inline-block';
@@ -209,13 +221,21 @@
             let p = prompt("Tržba (počet lístků):", "0");
             let z = (parseInt(p) || 0) * 5;
             statistiky.trzba += z; statistiky.dokončeno++;
-            await odeslat(WEBHOOK_HLAVNI, `✅ **${jmenoZamestnance}**: Jízda ${c} hotova. Tržba: ${z} USD.`);
+            await odeslat(WEBHOOK_HLAVNI, null, {
+                title: "Jízda dokončena",
+                description: `**${jmenoZamestnance}**: Jízda ${c} hotova.`,
+                fields: [
+                    { name: "Tržba", value: `${z} USD`, inline: true }
+                ],
+                color: 0x2ecc71
+            });
             document.getElementById('item-'+id).classList.add('completed-jizda');
             document.getElementById('ch-'+id).disabled = true;
         }
 
-        async function odeslat(url, msg) {
-            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: msg }) });
+        async function odeslat(url, msg = null, embed = null) {
+            const payload = embed ? { embeds: [embed] } : { content: msg };
+            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         }
 
         async function poslatHlaseniBlackwater(linkaObj, startH, startM) {
@@ -229,14 +249,30 @@
                     let smer = "Saint Denis";
                     if(linkaObj.nazev === "EXPRES TRAIN") smer = (nalezenaZastavkaCislo === 1) ? "Benedict Point" : "Saint Denis";
                     const msg = `📢 **INFORMAČNÍ TABULE BLACKWATER**\n📌 **${linkaObj.nazev}**\n🕒 Příjezd: **${bwCas}**\n🛤️ Směr: **${smer}**`;
-                    await odeslat(WEBHOOK_BLACKWATER, msg);
+                    await odeslat(WEBHOOK_BLACKWATER, null, {
+                        title: "Informační tabule Blackwater",
+                        fields: [
+                            { name: "Linka", value: linkaObj.nazev, inline: true },
+                            { name: "Příjezd", value: bwCas, inline: true },
+                            { name: "Směr", value: smer, inline: true }
+                        ],
+                        color: 0xf39c12
+                    });
                 }
             }
         }
 
         async function ukoncitSmenu() {
             if(confirm("Ukončit směnu?")) {
-                await odeslat(WEBHOOK_HLAVNI, `🏁 **REPORT: ${jmenoZamestnance}**\nDokončeno: ${statistiky.dokončeno}/${statistiky.celkemTrasy}\nTržba: ${statistiky.trzba} USD`);
+                await odeslat(WEBHOOK_HLAVNI, null, {
+                    title: "Konec směny - Report",
+                    description: `**${jmenoZamestnance}**`,
+                    fields: [
+                        { name: "Dokončeno", value: `${statistiky.dokončeno}/${statistiky.celkemTrasy}`, inline: true },
+                        { name: "Tržba", value: `${statistiky.trzba} USD`, inline: true }
+                    ],
+                    color: 0xe74c3c
+                });
                 location.reload();
             }
         }
