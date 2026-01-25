@@ -30,6 +30,55 @@
                 </ul>
             </nav>
         </div>
+
+        <!-- Changelog Modal -->
+        <div id="changelog-modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeChangelog()">&times;</span>
+                <h2>Changelog - Continental Rail Company</h2>
+                <table class="changelog-table">
+                    <thead>
+                        <tr>
+                            <th>Verze</th>
+                            <th>Změny</th>
+                            <th>Přečteno</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1.1</td>
+                            <td>Vylepšený vizuál s retro fonty a zlatými akcenty. Přidány ornamenty a animace.</td>
+                            <td><input type="checkbox" id="v1.1" onchange="checkChangelog()"></td>
+                        </tr>
+                        <tr>
+                            <td>1.0</td>
+                            <td>Počáteční vydání s výběrem zaměstnanců a správou směn.</td>
+                            <td><input type="checkbox" id="v1.0" onchange="checkChangelog()"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="rp-button" onclick="closeChangelog()">Zavřít</button>
+            </div>
+        </div>
     </div>
+
+    <script>
+        window.onload = function() {
+            document.getElementById('changelog-modal').style.display = 'block';
+        };
+
+        function closeChangelog() {
+            document.getElementById('changelog-modal').style.display = 'none';
+        }
+
+        function checkChangelog() {
+            // Optional: save to localStorage if all checked
+            const checks = document.querySelectorAll('#changelog-modal input[type="checkbox"]');
+            const allChecked = Array.from(checks).every(cb => cb.checked);
+            if (allChecked) {
+                localStorage.setItem('changelogRead', 'true');
+            }
+        }
+    </script>
 </body>
 </html>
