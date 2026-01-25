@@ -284,7 +284,10 @@
 
         // Changelog Modal
         window.onload = function() {
-            document.getElementById('changelog-modal').style.display = 'block';
+            if (!sessionStorage.getItem('changelogShown')) {
+                document.getElementById('changelog-modal').style.display = 'block';
+                sessionStorage.setItem('changelogShown', 'true');
+            }
         };
 
         function closeChangelog() {
