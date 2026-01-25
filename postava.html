@@ -28,9 +28,9 @@
             <div id="vyber-turnusu" style="display:none;">
                 <h2 class="section-label">Volba služby</h2>
                 <div class="button-container">
-                    <button class="rp-button" onclick="nastavitTurnus('RANNÍ', 5, 0)">§ RANNÍ (05:00 - 15:00)</button>
-                    <button class="rp-button" onclick="nastavitTurnus('ODPOLEDNÍ', 15, 0)">§ ODPOLEDNÍ (15:00 - 22:00)</button>
-                    <button class="rp-button" onclick="nastavitTurnus('NOČNÍ', 22, 0)">§ NOČNÍ (22:00 - 05:00)</button>
+                    <button class="rp-button" onclick="nastavitTurnus('RANNÍ')">§ RANNÍ (05:00 - 15:00)</button>
+                    <button class="rp-button" onclick="nastavitTurnus('ODPOLEDNÍ')">§ ODPOLEDNÍ (15:00 - 22:00)</button>
+                    <button class="rp-button" onclick="nastavitTurnus('NOČNÍ')">§ NOČNÍ (22:00 - 05:00)</button>
                     <button class="back-link" onclick="zpet()">← Zpět</button>
                 </div>
             </div>
@@ -40,9 +40,9 @@
                 <div class="button-container">
                     <label class="rp-label">Linka:</label>
                     <select id="select-linka" class="rp-select">
-                        <option value="0">Expres Train (47 min)</option>
-                        <option value="1">Bullet Train (27 min)</option>
-                        <option value="2">Local Train (13 min)</option>
+                        <option value="0">Expres Train (Dlouhá trasa)</option>
+                        <option value="1">Bullet Train (Rychlík)</option>
+                        <option value="2">Local Train (Regionální)</option>
                     </select>
                     <label class="rp-label">Počet kol:</label>
                     <input type="number" id="input-kola" class="rp-input" min="1" value="1">
@@ -74,20 +74,43 @@
 
         let statistiky = { dokončeno: 0, celkemTrasy: 0, trzba: 0 };
         
+        // Data upravena podle tvých nejnovějších tras a křižování v Olejárně
         const linkyData = [
             { 
                 nazev: "EXPRES TRAIN", 
-                doba: 47, 
+                doba: 85, // Delší doba pro trasu přes celou mapu
                 zastavky: [
-                    {s: "Saint Denis", t: 0}, {s: "Van Horn", t: 3}, {s: "Annesburg", t: 2}, {s: "Bachus", t: 4}, 
-                    {s: "Wallace", t: 4}, {s: "Riggs", t: 2}, {s: "Blackwater", t: 2}, {s: "MacFarlane", t: 4}, 
-                    {s: "Armadillo", t: 3}, {s: "Marcel", t: 2}, {s: "Benedict Point", t: 6}, 
-                    {s: "Blackwater", t: 8}, {s: "Saint Denis", t: 5}
+                    {s: "Saint Denis", t: 0}, {s: "Oil Fields", t: 5}, {s: "Van Horn", t: 5}, {s: "Annesburg", t: 4}, 
+                    {s: "Bacchus Station", t: 6}, {s: "Wallace Station", t: 6}, {s: "Riggs Station", t: 4}, 
+                    {s: "Blackwater", t: 4}, {s: "MacFarlane's Ranch", t: 6}, {s: "Armadillo", t: 5}, 
+                    {s: "Mercer Station", t: 4}, {s: "Benedict Point", t: 8}, {s: "Mercer Station ", t: 5}, 
+                    {s: "Armadillo ", t: 5}, {s: "MacFarlane's Ranch ", t: 5}, {s: "Blackwater ", t: 5}, 
+                    {s: "Flatneck", t: 4}, {s: "Rhodes", t: 4}, {s: "Saint Denis", t: 5}
                 ] 
             },
-            { nazev: "BULLET TRAIN", doba: 27, zastavky: [{s: "Saint Denis", t: 0}, {s: "Valentine", t: 4}, {s: "Flatneck", t: 3}, {s: "Montana River", t: 3}, {s: "MacFarlane", t: 2}, {s: "Blackwater", t: 3}, {s: "Saint Denis", t: 9}] },
-            { nazev: "LOCAL TRAIN", doba: 13, zastavky: [{s: "Saint Denis", t: 0}, {s: "Rhodes", t: 3}, {s: "Valentine", t: 4}, {s: "Emerald", t: 3}, {s: "Saint Denis", t: 3}] }
+            { 
+                nazev: "BULLET TRAIN", 
+                doba: 45, 
+                zastavky: [
+                    {s: "Saint Denis", t: 0}, {s: "Oil Fields", t: 6}, {s: "Valentine", t: 6}, {s: "Flatneck Station", t: 5}, 
+                    {s: "Montana River", t: 5}, {s: "MacFarlane's Ranch", t: 4}, {s: "Blackwater", t: 5}, {s: "Saint Denis", t: 14}
+                ] 
+            },
+            { 
+                nazev: "LOCAL TRAIN", 
+                doba: 35, 
+                zastavky: [
+                    {s: "Saint Denis", t: 0}, {s: "Rhodes", t: 6}, {s: "Valentine", t: 8}, {s: "Oil Fields", t: 5}, 
+                    {s: "Emerald Ranch", t: 8}, {s: "Saint Denis", t: 8}
+                ] 
+            }
         ];
+
+        const SMENY_CONFIG = {
+            'RANNÍ': { start: 300, konec: 900 },    // 05:00 - 15:00
+            'ODPOLEDNÍ': { start: 900, konec: 1320 }, // 15:00 - 22:00
+            'NOČNÍ': { start: 1320, konec: 1740 }   // 22:00 - 05:00
+        };
 
         function formatCas(h, m) {
             let hh = h; while (hh >= 24) hh -= 24;
@@ -99,7 +122,6 @@
             document.getElementById('vyber-linky').style.display='block'; 
         }
 
-        // OPRAVA: Přidána funkce pro zobrazení výběru turnusu
         function zobrazVyberSmeny() {
             document.getElementById('hlavni-rozhrani').style.display='none';
             document.getElementById('vyber-turnusu').style.display='block';
@@ -107,15 +129,34 @@
 
         function zpet() { location.reload(); }
 
-        // OPRAVA: Funkce pro nastavení turnusu (automaticky vybere linku podle postavy)
-        async function nastavitTurnus(typ, h, m) {
-            let vybranaLinka = linkyData[0]; // Výchozí Expres
-            if (jmenoZamestnance.includes("Elizabeth")) vybranaLinka = linkyData[1];
-            if (jmenoZamestnance.includes("Henry")) vybranaLinka = linkyData[2];
+        async function nastavitTurnus(typ) {
+            const config = SMENY_CONFIG[typ];
+            let aktualniCasVMinutach = config.start;
+            const konecSmenyVMinutach = config.konec;
+            
+            document.getElementById('vyber-turnusu').style.display = 'none';
+            document.getElementById('jizdni-rad-smeny').style.display = 'block';
+            let v = document.getElementById('vypis-linek');
+            v.innerHTML = "";
+            
+            statistiky.celkemTrasy = 0;
+            let indexLinky = 0;
 
             await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** nastupuje na turnus: **${typ}**.`);
-            document.getElementById('vyber-turnusu').style.display='none';
-            vygenerujList(vybranaLinka, 4, h, m); // Generuje 4 kola pro daný turnus
+
+            while (aktualniCasVMinutach + 20 < konecSmenyVMinutach) {
+                let linka = linkyData[indexLinky % linkyData.length];
+                if (aktualniCasVMinutach + linka.doba > konecSmenyVMinutach) break;
+
+                let startH = Math.floor(aktualniCasVMinutach / 60) % 24;
+                let startM = aktualniCasVMinutach % 60;
+
+                v.innerHTML += vytvorRadekJizdy(linka, statistiky.celkemTrasy + 1, startH, startM);
+                
+                aktualniCasVMinutach += linka.doba + 10; // Doba jízdy + 10min pauza v Saint Denis
+                statistiky.celkemTrasy++;
+                indexLinky++;
+            }
         }
 
         async function zahájitManualniSmenu() {
@@ -123,22 +164,21 @@
             const kola = parseInt(document.getElementById('input-kola').value) || 1;
             const odklad = parseInt(document.getElementById('input-odklad').value) || 0;
             const d = new Date(new Date().getTime() + (odklad * 60000));
-            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** zahajuje manuální směnu (${linkyData[index].nazev}).`);
-            vygenerujList(linkyData[index], kola, d.getHours(), d.getMinutes());
-        }
-
-        function vygenerujList(l, k, h, m) {
+            
             document.getElementById('vyber-linky').style.display='none'; 
             document.getElementById('jizdni-rad-smeny').style.display='block';
+            
+            await odeslat(WEBHOOK_HLAVNI, `🚩 **${jmenoZamestnance}** zahajuje manuální směnu (${linkyData[index].nazev}).`);
+            
             let v = document.getElementById('vypis-linek'); v.innerHTML = "";
-            for(let i=1; i<=k; i++) {
-                v.innerHTML += vytvorRadekJizdy(l, i, h, m);
+            let h = d.getHours(), m = d.getMinutes();
+            for(let i=1; i<=kola; i++) {
+                v.innerHTML += vytvorRadekJizdy(linkyData[index], i, h, m);
                 statistiky.celkemTrasy++;
-                m += l.doba + 10; while(m >= 60) { m -= 60; h++; }
+                m += linkyData[index].doba + 10; while(m >= 60) { m -= 60; h++; }
             }
         }
 
-        // ... zbytek funkcí (vytvorRadekJizdy, start, konec, odeslat, poslatHlaseniBlackwater) zůstává stejný ...
         function vytvorRadekJizdy(l, c, h, m) {
             const id = "j-" + Math.random().toString(36).substr(2, 5);
             const sV = formatCas(h, m);
@@ -183,7 +223,7 @@
             let nalezenaZastavkaCislo = 0;
             for (let z of linkaObj.zastavky) {
                 tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
-                if(z.s === "Blackwater") {
+                if(z.s.includes("Blackwater")) {
                     nalezenaZastavkaCislo++;
                     let bwCas = formatCas(tH, tM);
                     let smer = "Saint Denis";
