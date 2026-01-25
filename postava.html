@@ -75,6 +75,13 @@
         const WEBHOOK_HLAVNI = "https://discord.com/api/webhooks/1462379181290553378/7szxSP1bgAiR1diwDixyPPrXxklYWVGdLn3xZy8czqxGbqda9wtryXNV_zqJXL3PHGKO";
         const WEBHOOK_BLACKWATER = "https://discord.com/api/webhooks/1463245037834862616/M_myizEOqBJjE84_5MKqNQdRlY4S1P6EHBA3JnYxOw2mdYYn0kt609sc8MIz1v3e4PkV";
 
+        const WEBHOOK_ZAMESTNANCI = {
+            'Joshue-Thorne': "https://discord.com/api/webhooks/1465056082752704603/RLXTppqZ_ANNJ58G7SAnJt9jzupt1ySDpeuz3TcgZUnGIoWeEYH4iRe9uAgw2pugZUbo",
+            'Elizabeth-Brown': "https://discord.com/api/webhooks/1465055695148945479/XbFSoeTQ7uvPyO_9dzfaRzXU8Vs_A0rxEtj2KhD14cmzhB6CE0lJyk0eEtrpF9MBgRwD",
+            'Henry-Brown': "https://discord.com/api/webhooks/1465055928955965726/b2yx37bmObtgQkbuh-8RLX4OmGuNLb55T_ZoqKnP33wV22tvv_Hkq2viyb5H7gbt3b6R",
+            'Nicholas-Carter': "https://discord.com/api/webhooks/1465055817861435568/4ewqq4dEVmRgdcj86YCudaB5l34CMg8BiMHHvt_T-mfsUJSQ3T_ofibyBKK29pqqvEP-"
+        };
+
         let statistiky = { dokončeno: 0, celkemTrasy: 0, trzba: 0 };
         
         // Data upravena podle tvých nejnovějších tras a křižování v Olejárně
@@ -267,6 +274,35 @@
 
         async function ukoncitSmenu() {
             if(confirm("Ukončit směnu?")) {
+                // Načtení starých dat
+                const key = postavaID + '_stats';
+                const oldData = JSON.parse(localStorage.getItem(key) || '{"dokončeno": 0, "trzba": 0}');
+                
+                // Nová data
+                const newDokončeno = oldData.dokončeno + statistiky.dokončeno;
+                const newTrzba = oldData.trzba + statistiky.trzba;
+                
+                // Uložení nových dat
+                const newData = { dokončeno: newDokončeno, trzba: newTrzba };
+                localStorage.setItem(key, JSON.stringify(newData));
+                
+                // Odeslání reportu na zaměstnanecký webhook
+                const zamWebhook = WEBHOOK_ZAMESTNANCI[postavaID];
+                if (zamWebhook) {
+                    await odeslat(zamWebhook, null, {
+                        title: "Saint Denis Report zaměstnance",
+                        description: `**${jmenoZamestnance}**`,
+                        fields: [
+                            { name: "Naposledy Odjeto Kol", value: `${oldData.dokončeno}`, inline: true },
+                            { name: "Poslední tržba", value: `${oldData.trzba} USD`, inline: true },
+                            { name: "Nový Počet odjetých kol", value: `${newDokončeno}`, inline: true },
+                            { name: "Nová tržba", value: `${newTrzba} USD`, inline: true }
+                        ],
+                        color: 0x3498db
+                    });
+                }
+                
+                // Odeslání hlavního reportu
                 await odeslat(WEBHOOK_HLAVNI, null, {
                     title: "Konec směny - Report",
                     description: `**${jmenoZamestnance}**`,
