@@ -220,21 +220,21 @@
         }
 
         async function start(id, c, s, k, lObj, h, m) {
-            // Poznámky pro stanice s extra časem
-            const extraNotes = {
-                'Annesburg': ' (náklad + vykládka telegramu)',
-                'Benedict Point': ' (náklad + vykládka telegramu)',
-                "MacFarlane's Ranch": ' (náklad + vykládka telegramu)',
-                'Saint Denis': ' (náklad + vykládka telegramu)',
-                'Valentine': ' (náklad + vykládka telegramu)'
-            };
+            // Poznámky pro stanice s extra časem (jen při prvním výskytu)
+            const extraStations = new Set(['Annesburg', 'Benedict Point', "MacFarlane's Ranch", 'Saint Denis', 'Valentine']);
+            const usedStations = new Set();
 
             // Vytvoření textu jízdního řádu
             let jizdniRad = `**Strojvedoucí:** ${jmenoZamestnance}\n**Linka:** ${lObj.nazev}\n**Jízda č.** ${c}\n**Odjezd:** ${s}\n\n**Itinerář:**\n`;
             let tH = h, tM = m;
             lObj.zastavky.forEach(z => {
                 tM += z.t; while(tM >= 60) { tM -= 60; tH++; }
-                jizdniRad += `- ${z.s}${extraNotes[z.s] || ''}: ${formatCas(tH, tM)}\n`;
+                let note = '';
+                if (extraStations.has(z.s) && !usedStations.has(z.s)) {
+                    note = ' (náklad + vykládka telegramu)';
+                    usedStations.add(z.s);
+                }
+                jizdniRad += `- ${z.s}${note}: ${formatCas(tH, tM)}\n`;
             });
 
             await odeslat(WEBHOOK_JIZDNI_RAD, null, {
