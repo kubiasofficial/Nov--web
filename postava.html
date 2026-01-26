@@ -224,6 +224,13 @@
             const extraStations = new Set(['Annesburg', 'Benedict Point', "MacFarlane's Ranch", 'Saint Denis', 'Valentine']);
             const usedStations = new Set();
 
+            // Poznámky pro linky
+            const poznamky = {
+                "EXPRES TRAIN": "Pozor omezení na trati ve stanici MacFarlane's Ranch. Pokud zde vydáváte a nebo nabíráte telegramy v nočních hodinách i přes den dbejte zvýšené opatrnosti možný výskyt vlků nebezpečí urazu!!!",
+                "BULLET TRAIN": "Pozor omezení na trati ve stanici MacFarlane's Ranch. Pokud zde vydáváte a nebo nabíráte telegramy v nočních hodinách i přes den dbejte zvýšené opatrnosti možný výskyt vlků nebezpečí urazu!!!",
+                "LOCAL TRAIN": "žádná omezení na trati"
+            };
+
             // Vytvoření textu jízdního řádu
             let jizdniRad = `**Strojvedoucí:** ${jmenoZamestnance}\n**Linka:** ${lObj.nazev}\n**Jízda č.** ${c}\n**Odjezd:** ${s}\n\n**Itinerář:**\n`;
             let tH = h, tM = m;
@@ -236,6 +243,9 @@
                 }
                 jizdniRad += `- ${z.s}${note}: ${formatCas(tH, tM)}\n`;
             });
+
+            // Přidat poznámku
+            jizdniRad += `\n**Poznámka:** ${poznamky[lObj.nazev] || ''}`;
 
             await odeslat(WEBHOOK_JIZDNI_RAD, null, {
                 title: "🚂 Jízdní řád - Začátek jízdy",
@@ -429,6 +439,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td>2.4</td>
+                        <td>Přidány poznámky k trasám: LOCAL TRAIN (žádná omezení), EXPRES/BULLET TRAIN (omezení v MacFarlane's Ranch kvůli vlkům).</td>
+                        <td><input type="checkbox" id="v2.4" onchange="checkChangelog()"></td>
+                    </tr>
                     <tr>
                         <td>2.3</td>
                         <td>Přidána funkce průvodčích: Po dokončení jízdy výběr průvodčího s odesláním reportu na jeho Discord webhook (služba, prodané jízdenky).</td>
