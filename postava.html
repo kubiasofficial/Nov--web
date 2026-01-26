@@ -24,7 +24,33 @@
                 <div class="button-container">
                     <button class="rp-button" onclick="zobrazNastaveniSmeny()">Začít Směnu (Manuální)</button>
                     <button class="rp-button" onclick="zobrazVyberSmeny()">Přebrat směnu (Turnus)</button>
+                    <button class="rp-button" onclick="zobrazSmluvniPrepravu()">Smluvní přeprava</button>
                     <button class="rp-button btn-reset" onclick="vymazatZaznam()">Resetovat data</button>
+                </div>
+            </div>
+
+            <div id="smluvni-preprava" style="display:none;">
+                <h2 class="section-label">Smluvní přeprava</h2>
+                <div class="button-container">
+                    <label class="rp-label">Typ přepravy:</label>
+                    <select id="typ-prepravy" class="rp-select">
+                        <option value="osobní">Osobní</option>
+                        <option value="nákladní">Nákladní</option>
+                    </select>
+                    <label class="rp-label">Počet osob:</label>
+                    <input type="number" id="pocet-osob" class="rp-input" min="0" value="0">
+                    <label class="rp-label">Počet zvířat:</label>
+                    <input type="number" id="pocet-zvirat" class="rp-input" min="0" value="0">
+                    <label class="rp-label">Běžný náklad (kg/kus):</label>
+                    <input type="number" id="bezny-naklad" class="rp-input" min="0" value="0">
+                    <label class="rp-label">Náklad zvýšené hodnoty (kg/kus):</label>
+                    <input type="number" id="zvyseny-naklad" class="rp-input" min="0" value="0">
+                    <label class="rp-label">Pronájem vlaku (hodiny):</label>
+                    <input type="number" id="pronajem-hodiny" class="rp-input" min="0" value="0">
+                    <label class="rp-label">Poznámka:</label>
+                    <textarea id="poznamka-preprava" class="rp-input" rows="3"></textarea>
+                    <button class="rp-button" onclick="odeslatSmluvniPrepravu()">Odeslat smluvní přepravu</button>
+                    <button class="back-link" onclick="zpet()">← Zpět</button>
                 </div>
             </div>
 
@@ -140,7 +166,61 @@
             document.getElementById('vyber-turnusu').style.display='block';
         }
 
+        function zobrazSmluvniPrepravu() {
+            document.getElementById('hlavni-rozhrani').style.display='none';
+            document.getElementById('smluvni-preprava').style.display='block';
+        }
+
         function zpet() { location.reload(); }
+
+        async function odeslatSmluvniPrepravu() {
+            const typ = document.getElementById('typ-prepravy').value;
+            const osob = parseInt(document.getElementById('pocet-osob').value) || 0;
+            const zvirat = parseInt(document.getElementById('pocet-zvirat').value) || 0;
+            const bezny = parseInt(document.getElementById('bezny-naklad').value) || 0;
+            const zvyseny = parseInt(document.getElementById('zvyseny-naklad').value) || 0;
+            const hodiny = parseInt(document.getElementById('pronajem-hodiny').value) || 0;
+            const poznamka = document.getElementById('poznamka-preprava').value;
+
+            // Spočítat cenu
+            const cenaOsob = osob * 5;
+            const cenaZvirat = zvirat * 3;
+            const cenaBezny = bezny * 0.5;
+            const cenaZvyseny = zvyseny * 1.5;
+            const cenaPronajem = hodiny * 500;
+            const total = cenaOsob + cenaZvirat + cenaBezny + cenaZvyseny + cenaPronajem;
+
+            // Detail přepravy
+            let detail = '';
+            if (osob > 0) detail += `${osob} osob, `;
+            if (zvirat > 0) detail += `${zvirat} zvířat, `;
+            if (bezny > 0) detail += `${bezny} kg/kus běžného nákladu, `;
+            if (zvyseny > 0) detail += `${zvyseny} kg/kus nákladu zvýšené hodnoty, `;
+            if (hodiny > 0) detail += `${hodiny} hodin pronájmu, `;
+            detail = detail.slice(0, -2); // Odstranit poslední ", "
+
+            // Odeslat na webhook
+            const message = `Výkaz smluvní přepravy\nStrojvudce ${jmenoZamestnance}\nPrávě převzal smluvní přepravu a vyjíždí na trasu. Tento vlak veze ${typ} přepravu a to přesně ${detail}. Poznámka strojvedoucího: ${poznamka}.\n\nSmluvní přeprava Železniční společnosti přinesla výdělek ${total}$`;
+
+            await odeslat("https://discord.com/api/webhooks/1465274718012571822/LtfSaI2VDPmRmzvlYfDneQd4S7unna3j9xFXoxhR_9Sd0GrKKLL_B1eNV_uBUjzUdKuj", null, {
+                title: "📋 Výkaz smluvní přepravy",
+                description: message,
+                color: 0xffd700
+            });
+
+            // Report do osobní složky
+            const zamWebhook = WEBHOOK_ZAMESTNANCI[postavaID];
+            if (zamWebhook) {
+                await odeslat(zamWebhook, null, {
+                    title: "Smluvní přeprava dokončena",
+                    description: `**${jmenoZamestnance}** dokončil smluvní přepravu. Výdělek: ${total}$.`,
+                    color: 0x2ecc71
+                });
+            }
+
+            alert('Smluvní přeprava odeslána!');
+            location.reload();
+        }
 
         async function nastavitTurnus(typ) {
             const config = SMENY_CONFIG[typ];
@@ -439,6 +519,11 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <tr>
+                        <td>2.5</td>
+                        <td>Přidána funkce Smluvní přeprava: Formulář pro zadání typu přepravy, počtu položek a poznámek s automatickým výpočtem ceny a odesláním reportu.</td>
+                        <td><input type="checkbox" id="v2.5" onchange="checkChangelog()"></td>
+                    </tr>
                     <tr>
                         <td>2.4</td>
                         <td>Přidány poznámky k trasám: LOCAL TRAIN (žádná omezení), EXPRES/BULLET TRAIN (omezení v MacFarlane's Ranch kvůli vlkům).</td>
