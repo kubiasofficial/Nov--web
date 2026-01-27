@@ -137,11 +137,17 @@
             },
             { 
                 nazev: "LOCAL TRAIN", 
-                doba: 25, // Upravená doba podle nových intervalů
+                doba: 13, // Nová doba podle zadání (3+3+4+3)
                 zastavky: [
-                    {s: "Saint Denis", t: 0}, {s: "Rhodes", t: 3}, {s: "Valentine", t: 9}, {s: "Oil Fields", t: 2}, 
-                    {s: "Emerald Ranch", t: 2}, {s: "Saint Denis", t: 9}
-                ] 
+                    {s: "Saint Denis", t: 0},
+                    {s: "Saint Denis (pobyt telegramy)", t: 3},
+                    {s: "Rhodes", t: 3},
+                    {s: "Valentine", t: 3},
+                    {s: "Valentine (pobyt vykl./nakl.)", t: 6},
+                    {s: "Emerald Ranch", t: 4},
+                    {s: "Saint Denis", t: 3}
+                ],
+                poznamka: "Nabíráme telegramy v Saint Denis (+3 min) a vykládáme/nakládáme ve Valentine (+6 min)."
             }
         ];
 
