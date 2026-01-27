@@ -8,6 +8,71 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background: #18120c;
+        }
+        .book-page {
+            box-shadow: 0 0 40px 10px #e6c97a55, 0 0 0 4px #bfa14a, 0 0 0 8px #fffbe6;
+            border-radius: 16px;
+            transition: box-shadow 0.5s;
+            animation: glow 2.5s infinite alternate;
+        }
+        @keyframes glow {
+            0% { box-shadow: 0 0 40px 10px #e6c97a33, 0 0 0 4px #bfa14a, 0 0 0 8px #fffbe6; }
+            100% { box-shadow: 0 0 60px 18px #ffe08a99, 0 0 0 4px #bfa14a, 0 0 0 8px #fffbe6; }
+        }
+        .main-title h1 {
+            color: #bfa14a;
+            text-shadow: 0 2px 8px #fffbe6, 0 0 2px #bfa14a;
+            letter-spacing: 2px;
+            font-size: 2.2em;
+            margin-bottom: 0.2em;
+        }
+        .main-title .subtitle {
+            color: #bfa14a;
+            font-style: italic;
+            font-size: 1.1em;
+            margin-bottom: 0.5em;
+        }
+        .main-title .tagline {
+            color: #bfa14a;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 1em;
+        }
+        .logo-container {
+            filter: drop-shadow(0 0 8px #ffe08a88);
+            margin-bottom: 0.5em;
+        }
+        .border-decoration {
+            border: 2.5px solid #bfa14a;
+            box-shadow: 0 0 16px 2px #e6c97a44;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #fffbe6 90%, #f7e7b6 100%);
+        }
+        .book-nav .section-label {
+            color: #bfa14a;
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 0.5em;
+        }
+        .book-nav ul li a {
+            color: #18120c;
+            background: linear-gradient(90deg, #ffe08a 0%, #fffbe6 100%);
+            border-radius: 6px;
+            padding: 0.2em 0.8em;
+            margin: 0.2em 0;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 1px 4px #e6c97a33;
+            transition: background 0.2s, color 0.2s;
+        }
+        .book-nav ul li a:hover {
+            background: #bfa14a;
+            color: #fffbe6;
+        }
+    </style>
 </head>
 <body>
     <div class="book-page">
