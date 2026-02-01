@@ -75,27 +75,39 @@
     </style>
 </head>
 <body>
-    <div class="book-page">
-        <div class="border-decoration">
-            <header class="main-title">
-                <p class="subtitle">Založeno léta páně 1899</p>
-                <div class="logo-container">
-                    <img src="logo.png" alt="Logo CRC" class="logo">
-                </div>
-                <h1>Continental Rail Company</h1>
-                <p class="tagline">Páteř pokroku, tepna civilizace</p>
-                <p class="intro">Vítejte v evidenci zaměstnanců železniční společnosti. Vyberte svého zaměstnance a začněte směnu.</p>
-            </header>
-            <nav class="book-nav">
-                <p class="section-label">Výběr zaměstnance</p>
-                <ul>
-                    <li><a href="postava.html?id=Joshue-Thorne">Joshue Thorne</a></li>
-                    <li><a href="postava.html?id=Elizabeth-Brown">Elizabeth Brown</a></li>
-                    <li><a href="postava.html?id=Henry-Brown">Henry Brown</a></li>
-                    <li><a href="postava.html?id=Nicholas-Carter">Nicholas Carter</a></li>
-                </ul>
-            </nav>
+    <div id="login-modal" class="modal" style="display:flex;align-items:center;justify-content:center;position:fixed;z-index:1000;left:0;top:0;width:100vw;height:100vh;background:rgba(24,18,12,0.92);">
+        <div class="modal-content" style="text-align:center;max-width:350px;margin:auto;background:#fffbe6;border:2px solid #bfa14a;border-radius:12px;padding:2em 2em 1.5em 2em;box-shadow:0 0 24px #bfa14a55;">
+            <img src="logo.png" alt="Logo CRC" style="width:80px;margin-bottom:1em;filter:drop-shadow(0 0 8px #ffe08a88);">
+            <h2 style="color:#bfa14a;letter-spacing:1px;">Přihlášení přes Discord</h2>
+            <p style="margin-bottom:1.5em;">Pro vstup do evidence je nutné ověření identity.</p>
+            <button id="discord-login-btn" style="background:#5865F2;color:#fff;font-weight:bold;padding:0.7em 1.5em;border:none;border-radius:6px;font-size:1.1em;cursor:pointer;box-shadow:0 2px 8px #5865f255;">Přihlásit se přes Discord</button>
+            <div id="login-error" style="color:#b30000;margin-top:1em;display:none;"></div>
         </div>
+    </div>
+    <div id="main-content" style="display:none;">
+        <div class="book-page">
+            <div class="border-decoration">
+                <header class="main-title">
+                    <p class="subtitle">Založeno léta páně 1899</p>
+                    <div class="logo-container">
+                        <img src="logo.png" alt="Logo CRC" class="logo">
+                    </div>
+                    <h1>Continental Rail Company</h1>
+                    <p class="tagline">Páteř pokroku, tepna civilizace</p>
+                    <p class="intro">Vítejte v evidenci zaměstnanců železniční společnosti. Vyberte svého zaměstnance a začněte směnu.</p>
+                </header>
+                <nav class="book-nav">
+                    <p class="section-label">Výběr zaměstnance</p>
+                    <ul>
+                        <li><a href="postava.html?id=Joshue-Thorne">Joshue Thorne</a></li>
+                        <li><a href="postava.html?id=Elizabeth-Brown">Elizabeth Brown</a></li>
+                        <li><a href="postava.html?id=Henry-Brown">Henry Brown</a></li>
+                        <li><a href="postava.html?id=Nicholas-Carter">Nicholas Carter</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
 
         <!-- Changelog Modal -->
         <div id="changelog-modal" class="modal">
@@ -154,7 +166,67 @@
     </div>
 
     <script>
+        // Discord OAuth2 přihlášení a omezení přístupu
+        const ALLOWED_IDS = [
+            "417061947759001600", // Joshu Thorn
+            "1350594297250185331", // Henry Brown
+            "1454130138240520407", // Elizabeth Brown
+            "808315254396289057"   // Nicholas Carter
+        ];
+
+        function showError(msg) {
+            document.getElementById('login-error').innerText = msg;
+            document.getElementById('login-error').style.display = 'block';
+        }
+
+        function showMain() {
+            document.getElementById('login-modal').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        // Zpracování OAuth2 redirectu
+        async function handleDiscordLogin() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('code')) {
+                try {
+                    // Výměna code za token musí proběhnout na backendu/serverless (zde pouze ukázka postupu)
+                    // Backend endpoint by měl přijmout code a vrátit user info
+                    // ZDE JE DEMO, V REÁLU NEDÁVEJ DISCORD SECRET DO FRONTENDU!
+                    const code = params.get('code');
+                    const redirect_uri = encodeURIComponent('https://nov-web-eight.vercel.app/');
+                    // V produkci použij serverless funkci!
+                    const data = new URLSearchParams();
+                    data.append('client_id', '1467553835211030674');
+                    data.append('client_secret', ''); // ZDE VLOŽIT SECRET NA BACKENDU!
+                    data.append('grant_type', 'authorization_code');
+                    data.append('code', code);
+                    data.append('redirect_uri', 'https://nov-web-eight.vercel.app/');
+                    // fetch('https://discord.com/api/oauth2/token', { method: 'POST', body: data, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+                    //   .then(...)
+                    // Po získání access_tokenu:
+                    // fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer ' + access_token } })
+                    //   .then(...)
+                    // Zde pouze simulace:
+                    // const user = { id: "417061947759001600", username: "Joshu Thorn" };
+                    // if (!ALLOWED_IDS.includes(user.id)) { showError('Přístup odepřen. Nejste na seznamu zaměstnanců.'); return; }
+                    // showMain();
+                    // window.history.replaceState(null, '', window.location.pathname);
+                } catch (e) {
+                    showError('Chyba při ověřování Discord účtu.');
+                }
+            }
+        }
+
+        document.getElementById('discord-login-btn').onclick = function() {
+            const client_id = '1467553835211030674';
+            const redirect_uri = encodeURIComponent('https://nov-web-eight.vercel.app/');
+            const scope = 'identify';
+            const url = `https://discord.com/oauth2/authorize?client_id=${client_id}&response_type=code&redirect_uri=${redirect_uri}&scope=${scope}`;
+            window.location.href = url;
+        };
+
         window.onload = function() {
+            handleDiscordLogin();
             if (!sessionStorage.getItem('changelogShown')) {
                 document.getElementById('changelog-modal').style.display = 'block';
                 sessionStorage.setItem('changelogShown', 'true');
