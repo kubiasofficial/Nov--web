@@ -209,16 +209,24 @@
                             const data = snap.data();
                             console.log('Načtená data zaměstnance:', data);
                             document.getElementById('zamestnanec-info').innerHTML = `
-                                <h2 style=\"color:#bfa14a;\">${data.jmeno} <span style=\"font-size:0.7em;color:#888;\">(${user.id})</span></h2>
-                                <p>Status: <b>${data.status}</b></p>
-                                <p>Počet jízd: <b>${data.pocetJizd}</b></p>
-                                <p>Tržba: <b>${data.trzba} $</b></p>
-                                <p>Poslední jízda: ${data.posledniJizda ? `
-                                  <br>Datum: <b>${data.posledniJizda.datum && data.posledniJizda.datum.seconds ? new Date(data.posledniJizda.datum.seconds * 1000).toLocaleString() : '-'}</b>
-                                  <br>Trasa: <b>${data.posledniJizda.trasa || '-'}</b>
-                                  <br>Typ: <b>${data.posledniJizda.typ || '-'}</b>
-                                  <br>Výdělek: <b>${data.posledniJizda.Vydelano || 0} $</b>
-                                ` : 'Žádná'}
+                                <h2 style=\"color:#bfa14a;margin-bottom:0.2em;\">${data.jmeno} <span style=\"font-size:0.7em;color:#888;\">(${user.id})</span></h2>
+                                <div style=\"margin-bottom:1.2em;\">Role: <b>${data.role}</b></div>
+                                <div style=\"margin-bottom:0.7em;\"><b>Status:</b> <span style=\"color:${data.status==='v praci'?'#2ecc71':'#bfa14a'};font-weight:bold;\">${data.status==='v praci'?'V práci':'Volno'}</span></div>
+                                <div style=\"margin-bottom:0.7em;\"><b>Počet odjetých jízd:</b> ${data.pocetJizd}</div>
+                                <div style=\"margin-bottom:0.7em;\"><b>Celková tržba:</b> ${data.trzba} $</div>
+                                <div style=\"margin-bottom:0.7em;\"><b>Aktuální trasa:</b> ${data.aktualniTrasa || '-'}</div>
+                                <div style=\"margin-top:1.2em;\"><b>Poslední jízda:</b><br>
+                                    <span style=\"font-size:0.95em;\">
+                                    Datum: <b>${data.posledniJizda && data.posledniJizda.datum && data.posledniJizda.datum.seconds ? new Date(data.posledniJizda.datum.seconds * 1000).toLocaleString() : '-'}</b><br>
+                                    Trasa: <b>${data.posledniJizda && data.posledniJizda.trasa ? data.posledniJizda.trasa : '-'}</b><br>
+                                    Typ: <b>${data.posledniJizda && data.posledniJizda.typ ? data.posledniJizda.typ : '-'}</b><br>
+                                    Výdělek: <b>${data.posledniJizda && data.posledniJizda.Vydelano ? data.posledniJizda.Vydelano : 0} $</b>
+                                    </span>
+                                </div>
+                                <div style=\"margin-top:2em;display:flex;gap:1.2em;justify-content:center;\">
+                                    <a href=\"postava.html?id=${encodeURIComponent(data.jmeno.replace(/ /g, '-'))}\" class=\"rp-button\" style=\"background:#bfa14a;color:#18120c;font-weight:bold;padding:0.7em 2em;border-radius:7px;text-decoration:none;box-shadow:0 2px 8px #bfa14a33;transition:background 0.2s;\">Začít</a>
+                                    <a href=\"zamestnanci.html\" class=\"rp-button\" style=\"background:#fffbe6;color:#bfa14a;font-weight:bold;padding:0.7em 2em;border-radius:7px;text-decoration:none;box-shadow:0 2px 8px #bfa14a33;transition:background 0.2s;border:1.5px solid #bfa14a;\">Zaměstnanci</a>
+                                </div>
                             `;
                         } else {
                             document.getElementById('zamestnanec-info').innerText = 'Zaměstnanec nenalezen v databázi.';

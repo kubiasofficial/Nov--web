@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail zaměstnance - CRC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .zam-detail { max-width: 500px; margin: 2em auto; background: #fffbe6; border-radius: 12px; box-shadow: 0 2px 12px #bfa14a33; padding: 2em; }
+        .zam-detail h2 { color: #bfa14a; margin-bottom: 0.5em; }
+        .zam-status { font-weight: bold; }
+        .zam-status.volno { color: #bfa14a; }
+        .zam-status.vpraci { color: #2ecc71; }
+        .zam-dot { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:0.5em; vertical-align:middle; }
+        .zam-dot.volno { background:#bfa14a; }
+        .zam-dot.vpraci { background:#2ecc71; }
+        .zam-trasa { font-size:1.05em; color:#888; }
+        .zam-jizdy { margin-top:1.5em; }
+        .zam-jizdy th, .zam-jizdy td { padding:0.3em 0.7em; }
+    </style>
+</head>
+<body>
+    <div class="book-page">
+        <div class="border-decoration">
+            <header class="main-title">
+                <h1>Detail zaměstnance</h1>
+                <a href="zamestnanci.html" class="back-link">← Zpět na seznam</a>
+            </header>
+            <div id="zamestnanec-detail"></div>
+        </div>
+    </div>
+    <script type="module">
+      import { db } from './firebase.js';
+      import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      async function nactiDetail() {
+        if (!id) { document.getElementById('zamestnanec-detail').innerText = 'Chybí ID zaměstnance.'; return; }
+        const ref = doc(db, "zamestnanci", id);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) { document.getElementById('zamestnanec-detail').innerText = 'Zaměstnanec nenalezen.'; return; }
+        const d = snap.data();
+        document.getElementById('zamestnanec-detail').innerHTML = `
+          <div class='zam-detail'>
+            <h2>${d.jmeno}</h2>
+            <div style='margin-bottom:0.7em;'><span class='zam-dot ${d.status==='v praci'?'vpraci':'volno'}'></span>
+              <span class='zam-status ${d.status==='v praci'?'vpraci':'volno'}'>${d.status==='v praci'?'V práci':'Volno'}</span>
+            </div>
+            <div style='margin-bottom:0.7em;'><b>Role:</b> ${d.role}</div>
+            <div style='margin-bottom:0.7em;'><b>Počet jízd:</b> ${d.pocetJizd}</div>
+            <div style='margin-bottom:0.7em;'><b>Tržba:</b> ${d.trzba} $</div>
+            <div style='margin-bottom:0.7em;'><b>Aktuální trasa:</b> ${d.aktualniTrasa||'-'}</div>
+            <div style='margin-top:1.2em;'><b>Poslední jízda:</b><br>
+              <span style='font-size:0.95em;'>
+                Datum: <b>${d.posledniJizda && d.posledniJizda.datum && d.posledniJizda.datum.seconds ? new Date(d.posledniJizda.datum.seconds * 1000).toLocaleString() : '-'}</b><br>
+                Trasa: <b>${d.posledniJizda && d.posledniJizda.trasa ? d.posledniJizda.trasa : '-'}</b><br>
+                Typ: <b>${d.posledniJizda && d.posledniJizda.typ ? d.posledniJizda.typ : '-'}</b><br>
+                Výdělek: <b>${d.posledniJizda && d.posledniJizda.Vydelano ? d.posledniJizda.Vydelano : 0} $</b>
+              </span>
+            </div>
+          </div>
+        `;
+      }
+      nactiDetail();
+    </script>
+</body>
+</html>
