@@ -306,18 +306,29 @@
                 konecJizdy: konecJizdy
             });
 
-            // Aktualizace statusu a trasy zaměstnance
+            // Aktualizace statusu a trasy zaměstnance (vytvoření pokud neexistuje)
             if (!window._firestore_imported) {
                 window._firestore_imported = {};
                 window._firestore_imported.db = (await import('./firebase.js')).db;
                 const firestore = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
                 window._firestore_imported.doc = firestore.doc;
                 window._firestore_imported.updateDoc = firestore.updateDoc;
+                window._firestore_imported.setDoc = firestore.setDoc;
+                window._firestore_imported.getDoc = firestore.getDoc;
             }
-            await window._firestore_imported.updateDoc(window._firestore_imported.doc(window._firestore_imported.db, "zamestnanci", postavaID), {
-                status: "v praci",
-                aktualniTrasa: linkyData[index].nazev
-            });
+            const docRef = window._firestore_imported.doc(window._firestore_imported.db, "zamestnanci", postavaID);
+            const docSnap = await window._firestore_imported.getDoc(docRef);
+            if (docSnap.exists()) {
+                await window._firestore_imported.updateDoc(docRef, {
+                    status: "v praci",
+                    aktualniTrasa: linkyData[index].nazev
+                });
+            } else {
+                await window._firestore_imported.setDoc(docRef, {
+                    status: "v praci",
+                    aktualniTrasa: linkyData[index].nazev
+                }, { merge: true });
+            }
 
             document.getElementById('vyber-linky').style.display='none'; 
             document.getElementById('jizdni-rad-smeny').style.display='block';
