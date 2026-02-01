@@ -174,13 +174,32 @@
         function showMain() {
             document.getElementById('login-modal').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
-            // Zobrazit data zaměstnance
+            // Zobrazit data zaměstnance, případně automaticky vytvořit dokument
             import('./firebase.js').then(async ({ db }) => {
-                const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
+                const { doc, getDoc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
                 const user = JSON.parse(sessionStorage.getItem('discordUser'));
                 if (user) {
                     const ref = doc(db, "zamestnanci", user.id);
-                    const snap = await getDoc(ref);
+                    let snap = await getDoc(ref);
+                    if (!snap.exists()) {
+                        // Vytvořit nový dokument s výchozími hodnotami
+                        await setDoc(ref, {
+                            jmeno: user.username,
+                            status: "volno",
+                            pocetJizd: 0,
+                            trzba: 0,
+                            aktualniTrasa: "-",
+                            avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : "-",
+                            role: "strojvedoucí",
+                            posledniJizda: {
+                                Vydelano: 0,
+                                datum: serverTimestamp(),
+                                trasa: "-",
+                                typ: "-"
+                            }
+                        });
+                        snap = await getDoc(ref);
+                    }
                     if (snap.exists()) {
                         const data = snap.data();
                         document.getElementById('zamestnanec-info').innerHTML = `
@@ -192,7 +211,7 @@
                               <br>Datum: <b>${data.posledniJizda.datum && data.posledniJizda.datum.seconds ? new Date(data.posledniJizda.datum.seconds * 1000).toLocaleString() : '-'}</b>
                               <br>Trasa: <b>${data.posledniJizda.trasa || '-'}</b>
                               <br>Typ: <b>${data.posledniJizda.typ || '-'}</b>
-                              <br>Výdělek: <b>${data.posledniJizda.vydelano || 0} $</b>
+                              <br>Výdělek: <b>${data.posledniJizda.Vydelano || 0} $</b>
                             ` : 'Žádná'}
                         `;
                     } else {
