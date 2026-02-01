@@ -26,6 +26,7 @@
                     <button class="rp-button" onclick="zobrazVyberSmeny()">Přebrat směnu (Turnus)</button>
                     <button class="rp-button" onclick="zobrazSmluvniPrepravu()">Smluvní přeprava</button>
                     <button class="rp-button btn-reset" onclick="vymazatZaznam()">Resetovat data</button>
+                    <button class="rp-button btn-reset" onclick="resetObsazenostLokomotivy()">Reset obsazenosti lokomotivy</button>
                 </div>
             </div>
 
@@ -93,6 +94,23 @@
     </div>
 
     <script>
+                // TESTOVACÍ funkce pro ruční odemknutí lokomotivy (reset obsazenosti)
+                async function resetObsazenostLokomotivy() {
+                    try {
+                        const { db } = await import('./firebase.js');
+                        const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
+                        await setDoc(doc(db, "lokomotivy", "lokomotiva_1"), {
+                            obsazeno: false,
+                            trasa: "-",
+                            zamestnanecId: "-",
+                            konecJizdy: null,
+                            zmeneno: new Date()
+                        }, { merge: true });
+                        alert('Obsazenost lokomotivy byla resetována.');
+                    } catch (e) {
+                        alert('Chyba při resetu obsazenosti: ' + (e.message || e));
+                    }
+                }
         const params = new URLSearchParams(window.location.search);
         const postavaID = params.get('id');
         const jmenoZamestnance = postavaID ? postavaID.replace(/-/g, ' ') : "Neznámý";
