@@ -94,17 +94,9 @@
                     </div>
                     <h1>Continental Rail Company</h1>
                     <p class="tagline">Páteř pokroku, tepna civilizace</p>
-                    <p class="intro">Vítejte v evidenci zaměstnanců železniční společnosti. Vyberte svého zaměstnance a začněte směnu.</p>
                 </header>
-                <nav class="book-nav">
-                    <p class="section-label">Výběr zaměstnance</p>
-                    <ul>
-                        <li><a href="postava.html?id=Joshue-Thorne">Joshue Thorne</a></li>
-                        <li><a href="postava.html?id=Elizabeth-Brown">Elizabeth Brown</a></li>
-                        <li><a href="postava.html?id=Henry-Brown">Henry Brown</a></li>
-                        <li><a href="postava.html?id=Nicholas-Carter">Nicholas Carter</a></li>
-                    </ul>
-                </nav>
+                <div id="zamestnanec-info" style="margin:2em 0 1em 0;"></div>
+                <!-- Další obsah (tlačítka, menu) můžeš přidat sem -->
             </div>
         </div>
     </div>
@@ -182,6 +174,32 @@
         function showMain() {
             document.getElementById('login-modal').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
+            // Zobrazit data zaměstnance
+            import('./firebase.js').then(async ({ db }) => {
+                const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
+                const user = JSON.parse(sessionStorage.getItem('discordUser'));
+                if (user) {
+                    const ref = doc(db, "zamestnanci", user.id);
+                    const snap = await getDoc(ref);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        document.getElementById('zamestnanec-info').innerHTML = `
+                            <h2 style="color:#bfa14a;">${data.jmeno} <span style="font-size:0.7em;color:#888;">(${user.id})</span></h2>
+                            <p>Status: <b>${data.status}</b></p>
+                            <p>Počet jízd: <b>${data.pocetJizd}</b></p>
+                            <p>Tržba: <b>${data.trzba} $</b></p>
+                            <p>Poslední jízda: ${data.posledniJizda ? `
+                              <br>Datum: <b>${data.posledniJizda.datum && data.posledniJizda.datum.seconds ? new Date(data.posledniJizda.datum.seconds * 1000).toLocaleString() : '-'}</b>
+                              <br>Trasa: <b>${data.posledniJizda.trasa || '-'}</b>
+                              <br>Typ: <b>${data.posledniJizda.typ || '-'}</b>
+                              <br>Výdělek: <b>${data.posledniJizda.vydelano || 0} $</b>
+                            ` : 'Žádná'}
+                        `;
+                    } else {
+                        document.getElementById('zamestnanec-info').innerText = 'Zaměstnanec nenalezen v databázi.';
+                    }
+                }
+            });
         }
 
         // Zpracování OAuth2 redirectu
@@ -247,4 +265,22 @@
         }
     </script>
 </body>
+<script type="module">
+    import { db } from './firebase.js';
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    async function nactiZamestnance(discordId) {
+        const ref = doc(db, "zamestnanci", discordId);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+            return snap.data();
+        } else {
+            return null;
+        }
+    }
+
+    // Příklad použití:
+    // const user = JSON.parse(sessionStorage.getItem('discordUser'));
+    // if (user) nactiZamestnance(user.id).then(data => console.log(data));
+</script>
 </html>
