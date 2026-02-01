@@ -285,7 +285,13 @@
         };
 
         window.onload = function() {
-            handleDiscordLogin();
+            // Pokud je uživatel uložen v sessionStorage, rovnou zobraz hlavní obsah
+            const user = sessionStorage.getItem('discordUser');
+            if (user) {
+                showMain();
+            } else {
+                handleDiscordLogin();
+            }
             if (!sessionStorage.getItem('changelogShown')) {
                 document.getElementById('changelog-modal').style.display = 'block';
                 sessionStorage.setItem('changelogShown', 'true');
