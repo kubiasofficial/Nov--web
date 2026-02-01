@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   const params = new URLSearchParams();
   params.append('client_id', '1467553835211030674');
-  params.append('client_secret', 'TVŮJ_DISCORD_CLIENT_SECRET'); // DOPLŇ SVŮJ SECRET!
+  params.append('client_secret', 'OhgpJAIGlUpEC7EavjXR4wGkHA6Hjv63');
   params.append('grant_type', 'authorization_code');
   params.append('code', code);
   params.append('redirect_uri', 'https://nov-web-eight.vercel.app/');
