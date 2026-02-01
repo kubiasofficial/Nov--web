@@ -283,30 +283,7 @@
         }
 
         async function zahájitManualniSmenu() {
-                        // Aktualizace statusu a trasy zaměstnance
-                        if (!window._firestore_imported) {
-                            window._firestore_imported = {};
-                            window._firestore_imported.db = (await import('./firebase.js')).db;
-                            const firestore = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
-                            window._firestore_imported.doc = firestore.doc;
-                            window._firestore_imported.updateDoc = firestore.updateDoc;
-                        }
-                        await window._firestore_imported.updateDoc(window._firestore_imported.doc(window._firestore_imported.db, "zamestnanci", postavaID), {
-                            status: "v praci",
-                            aktualniTrasa: linkyData[index].nazev
-                        });
-                        // Aktualizace statusu a trasy zaměstnance
-                        if (!window._firestore_imported) {
-                            window._firestore_imported = {};
-                            window._firestore_imported.db = (await import('./firebase.js')).db;
-                            const firestore = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
-                            window._firestore_imported.doc = firestore.doc;
-                            window._firestore_imported.updateDoc = firestore.updateDoc;
-                        }
-                        await window._firestore_imported.updateDoc(window._firestore_imported.doc(window._firestore_imported.db, "zamestnanci", postavaID), {
-                            status: "v praci",
-                            aktualniTrasa: `Turnus ${typ}`
-                        });
+        try {
             const index = document.getElementById('select-linka').value;
             const kola = parseInt(document.getElementById('input-kola').value) || 1;
             const odklad = parseInt(document.getElementById('input-odklad').value) || 0;
@@ -329,6 +306,19 @@
                 konecJizdy: konecJizdy
             });
 
+            // Aktualizace statusu a trasy zaměstnance
+            if (!window._firestore_imported) {
+                window._firestore_imported = {};
+                window._firestore_imported.db = (await import('./firebase.js')).db;
+                const firestore = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
+                window._firestore_imported.doc = firestore.doc;
+                window._firestore_imported.updateDoc = firestore.updateDoc;
+            }
+            await window._firestore_imported.updateDoc(window._firestore_imported.doc(window._firestore_imported.db, "zamestnanci", postavaID), {
+                status: "v praci",
+                aktualniTrasa: linkyData[index].nazev
+            });
+
             document.getElementById('vyber-linky').style.display='none'; 
             document.getElementById('jizdni-rad-smeny').style.display='block';
 
@@ -345,6 +335,10 @@
                 statistiky.celkemTrasy++;
                 m += linkyData[index].doba + 10; while(m >= 60) { m -= 60; h++; }
             }
+        } catch (e) {
+            alert('Nastala chyba při zahájení jízdy: ' + (e.message || e));
+            console.error(e);
+        }
         }
 
         function vytvorRadekJizdy(l, c, h, m) {
