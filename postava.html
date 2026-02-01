@@ -232,12 +232,32 @@
             const config = SMENY_CONFIG[typ];
             let aktualniCasVMinutach = config.start;
             const konecSmenyVMinutach = config.konec;
-            
+
+            // Kontrola obsazenosti lokomotivy
+            const { zjistiObsazenost, zamkniLokomotivu } = await import('./lokomotiva.js');
+            const obsaz = await zjistiObsazenost();
+            if (obsaz.obsazeno && obsaz.konecJizdy && obsaz.konecJizdy.seconds * 1000 > Date.now()) {
+                const dt = new Date(obsaz.konecJizdy.seconds * 1000);
+                alert(`Lituji, ale momentálně už je jeden strojvedoucí na trase. Volná lokomotiva bude až v ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`);
+                return;
+            }
+
+            // Zamknout lokomotivu pro tuto směnu (do konce směny)
+            const konecJizdy = new Date();
+            konecJizdy.setHours(Math.floor(konecSmenyVMinutach / 60));
+            konecJizdy.setMinutes(konecSmenyVMinutach % 60);
+            konecJizdy.setSeconds(0);
+            await zamkniLokomotivu({
+                trasa: `Turnus ${typ}`,
+                zamestnanecId: postavaID,
+                konecJizdy: konecJizdy
+            });
+
             document.getElementById('vyber-turnusu').style.display = 'none';
             document.getElementById('jizdni-rad-smeny').style.display = 'block';
             let v = document.getElementById('vypis-linek');
             v.innerHTML = "";
-            
+
             statistiky.celkemTrasy = 0;
             let indexLinky = 0;
 
@@ -258,7 +278,7 @@
                 
                 aktualniCasVMinutach += linka.doba + 10; // Doba jízdy + 10min pauza v Saint Denis
                 statistiky.celkemTrasy++;
-                indexLinky++;
+                let indexLinky = 0;
             }
         }
 
@@ -267,16 +287,33 @@
             const kola = parseInt(document.getElementById('input-kola').value) || 1;
             const odklad = parseInt(document.getElementById('input-odklad').value) || 0;
             const d = new Date(new Date().getTime() + (odklad * 60000));
-            
+
+            // Kontrola obsazenosti lokomotivy
+            const { zjistiObsazenost, zamkniLokomotivu } = await import('./lokomotiva.js');
+            const obsaz = await zjistiObsazenost();
+            if (obsaz.obsazeno && obsaz.konecJizdy && obsaz.konecJizdy.seconds * 1000 > Date.now()) {
+                const dt = new Date(obsaz.konecJizdy.seconds * 1000);
+                alert(`Lituji, ale momentálně už je jeden strojvedoucí na trase. Volná lokomotiva bude až v ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`);
+                return;
+            }
+
+            // Zamknout lokomotivu pro tuto jízdu
+            const konecJizdy = new Date(d.getTime() + (linkyData[index].doba + 10) * 60000 * kola); // orientačně
+            await zamkniLokomotivu({
+                trasa: linkyData[index].nazev,
+                zamestnanecId: postavaID,
+                konecJizdy: konecJizdy
+            });
+
             document.getElementById('vyber-linky').style.display='none'; 
             document.getElementById('jizdni-rad-smeny').style.display='block';
-            
+
             await odeslat(WEBHOOK_HLAVNI, null, {
                 title: "Začátek manuální směny",
                 description: `**${jmenoZamestnance}** zahajuje manuální směnu (${linkyData[index].nazev}).`,
                 color: 0x3498db
             });
-            
+
             let v = document.getElementById('vypis-linek'); v.innerHTML = "";
             let h = d.getHours(), m = d.getMinutes();
             for(let i=1; i<=kola; i++) {
@@ -432,18 +469,20 @@
 
         async function ukoncitSmenu() {
             if(confirm("Ukončit směnu?")) {
+                // Uvolnění lokomotivy
+                const { setDoc, doc } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
+                const { db } = await import('./firebase.js');
+                await setDoc(doc(db, "lokomotivy", "lokomotiva_1"), { obsazeno: false }, { merge: true });
+
                 // Načtení starých dat
                 const key = postavaID + '_stats';
                 const oldData = JSON.parse(localStorage.getItem(key) || '{"dokončeno": 0, "trzba": 0}');
-                
                 // Nová data
                 const newDokončeno = oldData.dokončeno + statistiky.dokončeno;
                 const newTrzba = oldData.trzba + statistiky.trzba;
-                
                 // Uložení nových dat
                 const newData = { dokončeno: newDokončeno, trzba: newTrzba };
                 localStorage.setItem(key, JSON.stringify(newData));
-                
                 // Odeslání reportu na zaměstnanecký webhook
                 const zamWebhook = WEBHOOK_ZAMESTNANCI[postavaID];
                 if (zamWebhook) {
@@ -451,7 +490,7 @@
                         title: "Saint Denis Report zaměstnance",
                         description: `**${jmenoZamestnance}**`,
                         fields: [
-                            { name: "Naposledy Odjeto Kol", value: `${oldData.dokončeno}`, inline: true },
+                            { name: "Naposledy Odjeto Kol", value: `${oldData.dokončeno}` , inline: true },
                             { name: "Poslední tržba", value: `${oldData.trzba} USD`, inline: true },
                             { name: "Nový Počet odjetých kol", value: `${newDokončeno}`, inline: true },
                             { name: "Nová tržba", value: `${newTrzba} USD`, inline: true }
@@ -459,7 +498,6 @@
                         color: 0x3498db
                     });
                 }
-                
                 // Odeslání hlavního reportu
                 await odeslat(WEBHOOK_HLAVNI, null, {
                     title: "Konec směny - Report",
