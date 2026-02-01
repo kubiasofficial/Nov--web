@@ -189,28 +189,28 @@
             const params = new URLSearchParams(window.location.search);
             if (params.has('code')) {
                 try {
-                    // Výměna code za token musí proběhnout na backendu/serverless (zde pouze ukázka postupu)
-                    // Backend endpoint by měl přijmout code a vrátit user info
-                    // ZDE JE DEMO, V REÁLU NEDÁVEJ DISCORD SECRET DO FRONTENDU!
                     const code = params.get('code');
-                    const redirect_uri = encodeURIComponent('https://nov-web-eight.vercel.app/');
-                    // V produkci použij serverless funkci!
-                    const data = new URLSearchParams();
-                    data.append('client_id', '1467553835211030674');
-                    data.append('client_secret', ''); // ZDE VLOŽIT SECRET NA BACKENDU!
-                    data.append('grant_type', 'authorization_code');
-                    data.append('code', code);
-                    data.append('redirect_uri', 'https://nov-web-eight.vercel.app/');
-                    // fetch('https://discord.com/api/oauth2/token', { method: 'POST', body: data, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
-                    //   .then(...)
-                    // Po získání access_tokenu:
-                    // fetch('https://discord.com/api/users/@me', { headers: { Authorization: 'Bearer ' + access_token } })
-                    //   .then(...)
-                    // Zde pouze simulace:
-                    // const user = { id: "417061947759001600", username: "Joshu Thorn" };
-                    // if (!ALLOWED_IDS.includes(user.id)) { showError('Přístup odepřen. Nejste na seznamu zaměstnanců.'); return; }
-                    // showMain();
-                    // window.history.replaceState(null, '', window.location.pathname);
+                    // Odeslat code na backendovou funkci
+                    const resp = await fetch('/api/discord-auth', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code })
+                    });
+                    const result = await resp.json();
+                    if (!result.user || !result.user.id) {
+                        showError('Nepodařilo se ověřit Discord účet.');
+                        return;
+                    }
+                    // Kontrola povolených ID
+                    if (!ALLOWED_IDS.includes(result.user.id)) {
+                        showError('Přístup odepřen. Nejste na seznamu zaměstnanců.');
+                        return;
+                    }
+                    // Uložit uživatele do localStorage/sessionStorage dle potřeby
+                    sessionStorage.setItem('discordUser', JSON.stringify(result.user));
+                    showMain();
+                    // Vyčistit URL od code parametru
+                    window.history.replaceState(null, '', window.location.pathname);
                 } catch (e) {
                     showError('Chyba při ověřování Discord účtu.');
                 }
