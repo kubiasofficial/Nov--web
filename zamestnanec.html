@@ -43,6 +43,20 @@
         const snap = await getDoc(ref);
         if (!snap.exists()) { document.getElementById('zamestnanec-detail').innerText = 'Zaměstnanec nenalezen.'; return; }
         const d = snap.data();
+        let historieHtml = '';
+        if (d.jizdy && Array.isArray(d.jizdy) && d.jizdy.length > 0) {
+          historieHtml = `<div class='zam-jizdy'><b>Historie jízd:</b><br><table border='1' style='width:100%;margin-top:0.5em;font-size:0.97em;'><tr><th>Datum</th><th>Trasa</th><th>Typ</th><th>Výdělek</th><th>Lokomotiva</th></tr>`;
+          d.jizdy.slice(-10).reverse().forEach(j => {
+            historieHtml += `<tr>
+              <td>${j.datum && j.datum.seconds ? new Date(j.datum.seconds * 1000).toLocaleString() : '-'}</td>
+              <td>${j.trasa||'-'}</td>
+              <td>${j.typ||'-'}</td>
+              <td>${j.Vydelano||'0'} $</td>
+              <td>${j.lokomotiva||'-'}</td>
+            </tr>`;
+          });
+          historieHtml += `</table></div>`;
+        }
         document.getElementById('zamestnanec-detail').innerHTML = `
           <div class='zam-detail'>
             <h2>${d.jmeno}</h2>
@@ -58,9 +72,11 @@
                 Datum: <b>${d.posledniJizda && d.posledniJizda.datum && d.posledniJizda.datum.seconds ? new Date(d.posledniJizda.datum.seconds * 1000).toLocaleString() : '-'}</b><br>
                 Trasa: <b>${d.posledniJizda && d.posledniJizda.trasa ? d.posledniJizda.trasa : '-'}</b><br>
                 Typ: <b>${d.posledniJizda && d.posledniJizda.typ ? d.posledniJizda.typ : '-'}</b><br>
-                Výdělek: <b>${d.posledniJizda && d.posledniJizda.Vydelano ? d.posledniJizda.Vydelano : 0} $</b>
+                Výdělek: <b>${d.posledniJizda && d.posledniJizda.Vydelano ? d.posledniJizda.Vydelano : 0} $</b><br>
+                Lokomotiva: <b>${d.posledniJizda && d.posledniJizda.lokomotiva ? d.posledniJizda.lokomotiva : '-'}</b>
               </span>
             </div>
+            ${historieHtml}
           </div>
         `;
       }

@@ -34,23 +34,22 @@
     </div>
     <script type="module">
       import { db } from './firebase.js';
-      import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-      async function nactiZamestnance() {
-        const col = collection(db, "zamestnanci");
-        const snap = await getDocs(col);
+      import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+      function renderZamestnanci(snap) {
         let html = `<table class='zam-table'>`;
         snap.forEach(doc => {
           const d = doc.data();
           html += `<tr class='zam-row' onclick="window.location.href='zamestnanec.html?id=${doc.id}'">
             <td class='zam-cell'><span class='zam-dot ${d.status==='v praci'?'vpraci':'volno'}'></span>${d.jmeno}</td>
             <td class='zam-cell zam-status ${d.status==='v praci'?'vpraci':'volno'}'>${d.status==='v praci'?'V práci':'Volno'}</td>
-            <td class='zam-cell zam-trasa'>${d.aktualniTrasa||'-'}</td>
+            <td class='zam-cell zam-trasa'>${d.aktualniTrasa||'-'}${d.lokomotiva ? ` <span style='color:#bfa14a;font-size:0.95em;'>(Lokomotiva: ${d.lokomotiva})</span>` : ''}</td>
           </tr>`;
         });
         html += `</table>`;
         document.getElementById('zamestnanci-list').innerHTML = html;
       }
-      nactiZamestnance();
+      const col = collection(db, "zamestnanci");
+      onSnapshot(col, renderZamestnanci);
     </script>
 </body>
 </html>
