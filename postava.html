@@ -94,6 +94,27 @@
     </div>
 
     <script>
+                        // Real-time listener na obsazenost lokomotivy
+                        async function nastavRealtimeObsazenostLokomotivy() {
+                            const { db } = await import('./firebase.js');
+                            const { doc, onSnapshot } = await import('https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js');
+                            const ref = doc(db, "lokomotivy", "lokomotiva_1");
+                            onSnapshot(ref, (snap) => {
+                                if (!snap.exists()) return;
+                                const data = snap.data();
+                                // Zobrazit aktuální stav obsazenosti v UI
+                                const stavBox = document.getElementById('aktualni-stav');
+                                if (data.obsazeno) {
+                                    let dt = data.konecJizdy && data.konecJizdy.seconds ? new Date(data.konecJizdy.seconds * 1000) : null;
+                                    stavBox.innerText = `Status: Obsazeno${dt ? ` do ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}` : ''}`;
+                                } else {
+                                    stavBox.innerText = 'Status: Volná lokomotiva';
+                                }
+                            });
+                        }
+
+                        // Spustit listener po načtení stránky
+                        window.addEventListener('DOMContentLoaded', nastavRealtimeObsazenostLokomotivy);
                 // TESTOVACÍ funkce pro ruční odemknutí lokomotivy (reset obsazenosti)
                 async function resetObsazenostLokomotivy() {
                     try {
@@ -248,7 +269,7 @@
 
         async function nastavitTurnus(typ) {
             const config = SMENY_CONFIG[typ];
-            let aktualniCasVMinutach = config.start;
+            let startTime;
             const konecSmenyVMinutach = config.konec;
 
             // Kontrola obsazenosti lokomotivy
@@ -257,7 +278,15 @@
             if (obsaz.obsazeno && obsaz.konecJizdy && obsaz.konecJizdy.seconds * 1000 > Date.now()) {
                 const dt = new Date(obsaz.konecJizdy.seconds * 1000);
                 alert(`Lituji, ale momentálně už je jeden strojvedoucí na trase. Volná lokomotiva bude až v ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`);
-                return;
+                startTime = dt;
+            } else {
+                // Začátek směny podle configu
+                startTime = new Date();
+                startTime.setHours(Math.floor(config.start / 60));
+                startTime.setMinutes(config.start % 60);
+                startTime.setSeconds(0);
+                // Pokud je už později než start směny, začni od aktuálního času
+                if (startTime < new Date()) startTime = new Date();
             }
 
             // Zamknout lokomotivu pro tuto směnu (do konce směny)
@@ -285,6 +314,9 @@
                 color: 0x3498db
             });
 
+            // Přepočet začátku směny na minuty od půlnoci
+            let aktualniCasVMinutach = startTime.getHours() * 60 + startTime.getMinutes();
+
             while (aktualniCasVMinutach + 20 < konecSmenyVMinutach) {
                 let linka = linkyData[indexLinky % linkyData.length];
                 if (aktualniCasVMinutach + linka.doba > konecSmenyVMinutach) break;
@@ -305,19 +337,21 @@
             const index = document.getElementById('select-linka').value;
             const kola = parseInt(document.getElementById('input-kola').value) || 1;
             const odklad = parseInt(document.getElementById('input-odklad').value) || 0;
-            const d = new Date(new Date().getTime() + (odklad * 60000));
 
             // Kontrola obsazenosti lokomotivy
             const { zjistiObsazenost, zamkniLokomotivu } = await import('./lokomotiva.js');
             const obsaz = await zjistiObsazenost();
+            let startTime;
             if (obsaz.obsazeno && obsaz.konecJizdy && obsaz.konecJizdy.seconds * 1000 > Date.now()) {
                 const dt = new Date(obsaz.konecJizdy.seconds * 1000);
                 alert(`Lituji, ale momentálně už je jeden strojvedoucí na trase. Volná lokomotiva bude až v ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}`);
-                return;
+                startTime = dt;
+            } else {
+                startTime = new Date(new Date().getTime() + (odklad * 60000));
             }
 
             // Zamknout lokomotivu pro tuto jízdu
-            const konecJizdy = new Date(d.getTime() + (linkyData[index].doba + 10) * 60000 * kola); // orientačně
+            const konecJizdy = new Date(startTime.getTime() + (linkyData[index].doba + 10) * 60000 * kola); // orientačně
             await zamkniLokomotivu({
                 trasa: linkyData[index].nazev,
                 zamestnanecId: postavaID,
@@ -358,7 +392,7 @@
             });
 
             let v = document.getElementById('vypis-linek'); v.innerHTML = "";
-            let h = d.getHours(), m = d.getMinutes();
+            let h = startTime.getHours(), m = startTime.getMinutes();
             for(let i=1; i<=kola; i++) {
                 v.innerHTML += vytvorRadekJizdy(linkyData[index], i, h, m);
                 statistiky.celkemTrasy++;
